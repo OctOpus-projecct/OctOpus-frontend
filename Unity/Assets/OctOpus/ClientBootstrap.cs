@@ -15,6 +15,10 @@ public sealed class ClientBootstrap : MonoBehaviour
     private int[] roster = Array.Empty<int>();
     private NetworkPlayer[] players = Array.Empty<NetworkPlayer>();
     private MovementInput movementInput;
+    private StrikeInput strikeInput;
+    private bool rebindingStrike;
+    private bool uiHasKeyboardFocus;
+    private bool clearGuiFocus;
     private Collider ground;
     private MaterialPropertyBlock playerColor;
     private float nextPositionLog;
@@ -26,6 +30,7 @@ public sealed class ClientBootstrap : MonoBehaviour
     private void Awake()
     {
         movementInput = new MovementInput();
+        strikeInput = new StrikeInput();
         playerColor = new MaterialPropertyBlock();
     }
 
@@ -42,6 +47,9 @@ public sealed class ClientBootstrap : MonoBehaviour
         if (Environment.GetCommandLineArgs().Any(argument => argument == "-octopus-tree-test" ||
                 argument == "-octopus-tree-contender" || argument == "-octopus-tree-observer"))
             gameObject.AddComponent<TreeTestHarness>();
+        if (Environment.GetCommandLineArgs().Any(argument => argument == "-octopus-strike-test" ||
+                argument == "-octopus-strike-observer"))
+            gameObject.AddComponent<StrikeTestHarness>();
         if (Array.IndexOf(Environment.GetCommandLineArgs(), "-octopus-connect") >= 0)
             Connect();
     }
@@ -65,6 +73,8 @@ public sealed class ClientBootstrap : MonoBehaviour
     private void OnApplicationFocus(bool focused)
     {
         movementInput?.UpdateFocus(focused, Time.frameCount);
+        strikeInput?.UpdateFocus(Time.frameCount);
+        if (!focused) rebindingStrike = false;
     }
 
     private void Update()
@@ -83,6 +93,7 @@ public sealed class ClientBootstrap : MonoBehaviour
             .OrderBy(player => player.OwnerId).ToArray();
         foreach (NetworkPlayer player in players)
         {
+            if (player.GetComponent<AxeSwingView>() == null) player.gameObject.AddComponent<AxeSwingView>();
             var renderer = player.GetComponent<Renderer>();
             if (renderer == null) continue;
             renderer.GetPropertyBlock(playerColor);
@@ -90,6 +101,23 @@ public sealed class ClientBootstrap : MonoBehaviour
                 ? new Color(0.2f, 0.85f, 0.6f) : new Color(0.85f, 0.6f, 0.25f));
             renderer.SetPropertyBlock(playerColor);
         }
+        foreach (NetworkTree renderedTree in FindObjectsByType<NetworkTree>(FindObjectsSortMode.None))
+        {
+            foreach (var renderer in renderedTree.GetComponentsInChildren<Renderer>())
+            {
+                renderer.enabled = !renderedTree.IsDepleted;
+                renderer.GetPropertyBlock(playerColor);
+                playerColor.SetColor(ColorId, renderer.name == "Trunk" ? new Color(.4f, .25f, .12f) :
+                    renderedTree.WorkerId < 0 ? new Color(.2f, .6f, .25f) : new Color(.7f, .6f, .15f));
+                renderer.SetPropertyBlock(playerColor);
+            }
+            foreach (var collider in renderedTree.GetComponentsInChildren<Collider>()) collider.enabled = !renderedTree.IsDepleted;
+        }
+        var owner = players.FirstOrDefault(player => player.IsOwner);
+        if (owner != null && owner.Activity == PlayerActivity.Working && Input.GetKeyDown(strikeInput.Key) &&
+            strikeInput.CanStrike(Application.isFocused, Time.frameCount, uiHasKeyboardFocus, rebindingStrike) &&
+            movementInput.CanMove(Input.mousePosition, Screen.height, Application.isFocused, Time.frameCount))
+            owner.RequestStrike();
         if (Time.unscaledTime >= nextPositionLog)
         {
             nextPositionLog = Time.unscaledTime + 0.5f;
@@ -108,9 +136,11 @@ public sealed class ClientBootstrap : MonoBehaviour
         if (!Input.GetMouseButtonDown(movementInput.Button) ||
             !movementInput.CanMove(Input.mousePosition, Screen.height, Application.isFocused, Time.frameCount))
             return;
-        var owner = players.FirstOrDefault(player => player.IsOwner);
         var camera = Camera.main;
         if (owner == null || camera == null) return;
+        clearGuiFocus = true;
+        uiHasKeyboardFocus = false;
+        if (rebindingStrike) return;
         Ray ray = camera.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit = default;
         bool hitGround = ground != null && ground.Raycast(ray, out hit, 1000f);
@@ -142,11 +172,25 @@ public sealed class ClientBootstrap : MonoBehaviour
     private void OnGUI()
     {
         if (manager == null) return;
+        if (clearGuiFocus) { GUI.FocusControl(null); clearGuiFocus = false; }
+        if (rebindingStrike && Event.current.type == EventType.KeyDown)
+        {
+            var key = Event.current.keyCode;
+            if (key == KeyCode.Escape || StrikeInput.IsBindable(key))
+            {
+                if (key != KeyCode.Escape) strikeInput.SetKey(key, Time.frameCount);
+                else strikeInput.UpdateFocus(Time.frameCount);
+                rebindingStrike = false;
+                GUI.FocusControl(null);
+                Event.current.Use();
+            }
+        }
         GUILayout.BeginArea(MovementInput.PanelRect, GUI.skin.box);
-        GUILayout.Label("OctOpus | Tree interaction prototype");
+        GUILayout.Label("OctOpus | Axe strike prototype");
         panelScroll = GUILayout.BeginScrollView(panelScroll);
         GUILayout.Label("Server address (UDP " + NetworkDefaults.Port + ")");
         GUI.enabled = state == LocalConnectionState.Stopped;
+        GUI.SetNextControlName("ServerAddress");
         address = GUILayout.TextField(address, 253);
         if (GUILayout.Button("Connect")) Connect();
         GUI.enabled = state == LocalConnectionState.Started || state == LocalConnectionState.Starting;
@@ -157,6 +201,11 @@ public sealed class ClientBootstrap : MonoBehaviour
         GUILayout.Label("Move / select tree mouse button (saved)");
         int selected = GUILayout.Toolbar(movementInput.Button, ButtonNames);
         if (selected != movementInput.Button) movementInput.SetButton(selected);
+        if (GUILayout.Button(rebindingStrike ? "Press keyboard key (Esc cancels)" : "Strike key: " + strikeInput.Key + " (change)"))
+        {
+            rebindingStrike = !rebindingStrike;
+            strikeInput.UpdateFocus(Time.frameCount);
+        }
         GUILayout.Label("You: green | Others: orange");
         GUILayout.Label("Click tree: approach and request work.");
         GUILayout.Label("Click ground: cancel work and move.");
@@ -164,6 +213,8 @@ public sealed class ClientBootstrap : MonoBehaviour
         NetworkPlayer owner = players.FirstOrDefault(player => player.IsOwner);
         GUILayout.Label("Your activity: " + (owner == null ? "-" : owner.Activity.ToString()));
         GUILayout.Label("Last server result: " + (owner == null ? "-" : owner.LastWorkResult.ToString()));
+        GUILayout.Label(owner == null ? "Stamina: -" : string.Format(CultureInfo.InvariantCulture,
+            "Stamina: {0:F1} / {1:F0} | Strike: {2}", owner.Stamina, owner.MaximumStamina, owner.LastStrikeResult));
         if (selectedTree == null)
             GUILayout.Label("Selected tree: none");
         else
@@ -174,8 +225,13 @@ public sealed class ClientBootstrap : MonoBehaviour
                 (owner != null && owner.OwnerId == selectedTree.WorkerId ? " (You)" : "")));
             GUILayout.Label(string.Format(CultureInfo.InvariantCulture,
                 "Server time remaining: {0:F1}s", selectedTree.SecondsRemaining));
+            GUILayout.Label(string.Format(CultureInfo.InvariantCulture, "Tree HP: {0:F0} / {1:F0}",
+                selectedTree.Health, selectedTree.MaximumHealth));
+            if (selectedTree.IsDepleted) GUILayout.Label(string.Format(CultureInfo.InvariantCulture,
+                "Tree depleted - returns in {0:F1}s", selectedTree.RespawnRemaining));
         }
-        GUILayout.Label("Work session only; strikes / rewards come later.");
+        GUILayout.Label("Press " + strikeInput.Key + " once per strike; wait when stamina is low.");
+        GUILayout.Label("HP 0: tree returns after 10s. Wood rewards come later.");
         GUILayout.Label("Positions confirmed by server:");
         foreach (NetworkPlayer player in players)
         {
@@ -185,6 +241,7 @@ public sealed class ClientBootstrap : MonoBehaviour
         }
         GUILayout.EndScrollView();
         GUILayout.EndArea();
+        uiHasKeyboardFocus = GUIUtility.keyboardControl != 0;
     }
 
     private void OnDestroy()
