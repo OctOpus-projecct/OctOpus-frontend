@@ -1,7 +1,7 @@
 # 개발·검증 절차
 
 ## 현재 상태
-Unity와 FishNet의 설치 대상 버전은 선정했다. Unity 프로젝트 생성·패키지 설치·게임 빌드·테스트 명령 검증은 아직 하지 않았다. 문서 검사 스크립트와 GitHub Actions는 원격에 반영했다. CI 결과는 해당 커밋의 GitHub Actions 기록을 기준으로 확인한다.
+Unity 최소 접속 프로젝트와 Windows 빌드·PlayMode·세션 검증 스크립트가 있다. [초기 구성 안내](../unity-setup.md)의 실제 명령과 미검증 범위를 따른다. GitHub Actions는 문서 검사만 실행하며 Unity 검증과 구분한다.
 
 ## 문서 검증
 저장소 루트에서 PowerShell 7의 `pwsh -NoProfile -File scripts/check-docs.ps1`을 실행한다. 검사기 회귀 검증은 `pwsh -NoProfile -File scripts/test-check-docs.ps1`이다.
