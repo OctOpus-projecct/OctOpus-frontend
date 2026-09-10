@@ -19,11 +19,13 @@ pwsh -NoProfile -File scripts/test-local-session.ps1
 플레이어 출력은 `Builds/WindowsClient/OctOpus.exe`이며 Data 폴더와 DLL을 함께 유지한다. 테스트 로그·XML은 `TestResults`에 저장되고 Git에서 제외된다. 포트 충돌 검사, 공용 패키지 테스트, 클라이언트 테스트는 같은 포트를 사용하므로 병렬 실행하지 않는다.
 
 ## 접속 화면
-Windows 전용 서버를 실행한 뒤 클라이언트를 실행한다. 기본 주소는 127.0.0.1, 포트는 UDP 7770이다. **Connect**로 접속하고 **Disconnect**로 종료한다. 같은 창에서 다시 Connect를 누르면 기존 네트워크 매니저를 재사용한다.
+Windows 전용 서버를 실행한 뒤 클라이언트를 실행한다. 기본 주소는 127.0.0.1, 포트는 UDP 7770이다. **Connect**로 접속하고 **Disconnect**로 종료한다. 같은 창에서 다시 Connect를 누르면 기존 네트워크 매니저를 재사용한다. `OCTOPUS_SERVER_ADDRESS` 환경변수가 있으면 주소 입력의 초기값으로 사용하며 화면에서 수정할 수 있다.
+
+WSL 서버는 [서버 안내](../../OctOpus-backend/docs/unity-setup.md)의 `scripts/run-wsl-server.ps1`로 실행하고 출력된 WSL IPv4를 두 게임 창에 입력한다. 서버를 켜 둔 상태에서 `scripts/test-local-session.ps1 -ExternalServer -ServerAddress WSL_IPV4`로 자동 검증할 수도 있다. 실제 WSL 주소로 바꿔 실행한다. 외부 서버에는 다른 사용자가 없어야 하며 스크립트는 테스트 클라이언트만 종료한다.
 
 화면에는 연결 상태, 플레이어 수·ID, 자신의 ID 표시와 플레이어별 임시 캡슐이 나온다. 이것은 접속 확인용 화면이다. 캡슐 위치는 목록 순서에 따른 표시 위치이며 서버의 월드 좌표나 이동 동기화가 아니다. 이동·키 재설정·벌목은 다음 구현 범위다.
 
 세션 테스트에서는 `-octopus-connect`로 접속을 자동 시작한다. 로그의 `[OctOpus] Roster=` 뒤에 정렬된 연결 ID가 기록된다. 테스트는 서버 1개·클라이언트 2개를 시작하고 양쪽 ID 목록 일치, 강제 종료 전파, 새 프로세스 재접속을 확인한다. 테스트 자신이 시작한 프로세스만 정리한다. 별도 PlayMode 테스트는 같은 클라이언트 인스턴스의 연결 종료·재접속과 마커 정리를 검증한다.
 
 ## 아직 확인하지 않은 범위
-Windows 접속 화면은 2026-09-10 사용자가 두 창의 상태·ID·캡슐 표시와 접속 종료·재접속이 기대대로 동작한다고 확인했다. Linux 서버의 실제 Linux 기동·접속과 10명 부하·원격 지연 환경은 남아 있다. GitHub 문서 CI와 Unity 실행 검증은 구분한다.
+Windows 접속 화면은 2026-09-10 사용자가 두 창의 상태·ID·캡슐 표시와 접속 종료·재접속이 기대대로 동작한다고 확인했다. WSL Ubuntu 26.04 Linux 서버와 Windows 두 클라이언트의 접속·종료·재접속도 자동 검증을 통과했다. Unity 공식 지원 Ubuntu 22.04·24.04 배포 환경과 10명 부하·원격 지연·AWS 검증은 남아 있다. GitHub 문서 CI와 Unity 실행 검증은 구분한다.

@@ -1,9 +1,16 @@
 param(
     [string]$ServerPath = "$PSScriptRoot/../../OctOpus-backend/Builds/WindowsServer/OctOpusServer.exe",
-    [string]$ClientPath = "$PSScriptRoot/../Builds/WindowsClient/OctOpus.exe"
+    [string]$ClientPath = "$PSScriptRoot/../Builds/WindowsClient/OctOpus.exe",
+    [switch]$ExternalServer,
+    [string]$ServerAddress = '127.0.0.1'
 )
 $ErrorActionPreference = 'Stop'
-foreach ($file in @($ServerPath, $ClientPath)) {
+$requiredFiles = @($ClientPath)
+if (-not $ExternalServer) { $requiredFiles += $ServerPath }
+if (-not $ExternalServer -and $ServerAddress -ne '127.0.0.1') {
+    throw 'Use -ExternalServer when specifying a different server address.'
+}
+foreach ($file in $requiredFiles) {
     if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "Build missing: $file" }
 }
 $output = Join-Path $PSScriptRoot ('../TestResults/session-' + [guid]::NewGuid().ToString('N'))
@@ -11,7 +18,15 @@ $null = New-Item -ItemType Directory -Path $output
 $output = (Resolve-Path $output).Path
 $ownedProcesses = [System.Collections.Generic.List[System.Diagnostics.Process]]::new()
 function Start-Game([string]$file, [string]$log, [string]$extra = '') {
-    $process = Start-Process -FilePath (Resolve-Path $file).Path -ArgumentList "-batchmode -nographics -logFile `"$log`" $extra" -WindowStyle Hidden -PassThru
+    $start = [Diagnostics.ProcessStartInfo]::new((Resolve-Path $file).Path)
+    $start.UseShellExecute = $false
+    $start.CreateNoWindow = $true
+    $start.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
+    $start.Arguments = "-batchmode -nographics -logFile `"$log`" $extra"
+    $start.Environment['OCTOPUS_SERVER_ADDRESS'] = $ServerAddress
+    # The local regression run must retain its loopback server even if the caller configured WSL.
+    $null = $start.Environment.Remove('OCTOPUS_BIND_ADDRESS')
+    $process = [Diagnostics.Process]::Start($start)
     $ownedProcesses.Add($process)
     return $process
 }
@@ -32,6 +47,7 @@ function Wait-Roster([string]$log, [int]$count, [System.Diagnostics.Process]$pro
     throw "Timed out waiting for $count players; see $log"
 }
 try {
+    if (-not $ExternalServer) {
     $server = Start-Game $ServerPath "$output/server.log"
     $deadline = [DateTime]::UtcNow.AddSeconds(30)
     do {
@@ -45,6 +61,7 @@ try {
     if (-not $conflict.WaitForExit(15000)) { throw 'Port-conflicting server did not exit.' }
     if ($conflict.ExitCode -eq 0) { throw 'Port-conflicting server reported success.' }
     Write-Output 'Port conflict produces a nonzero exit.'
+    }
     $first = Start-Game $ClientPath "$output/client1.log" '-octopus-connect'
     $null = Wait-Roster "$output/client1.log" 1 $first
     $second = Start-Game $ClientPath "$output/client2.log" '-octopus-connect'

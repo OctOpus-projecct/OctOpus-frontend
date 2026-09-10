@@ -18,6 +18,8 @@ public sealed class ClientBootstrap : MonoBehaviour
     private void Start()
     {
         Application.runInBackground = true;
+        string configuredAddress = Environment.GetEnvironmentVariable("OCTOPUS_SERVER_ADDRESS");
+        if (!string.IsNullOrWhiteSpace(configuredAddress)) address = configuredAddress.Trim();
         manager = NetworkFactory.Create();
         manager.ClientManager.OnClientConnectionState += OnConnectionState;
         if (Array.IndexOf(Environment.GetCommandLineArgs(), "-octopus-connect") >= 0)
