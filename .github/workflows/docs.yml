@@ -1,0 +1,22 @@
+name: Documentation
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  docs:
+    name: docs-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Validate checker
+        shell: pwsh
+        run: ./scripts/test-check-docs.ps1
+      - name: Validate documentation
+        shell: pwsh
+        run: ./scripts/check-docs.ps1
