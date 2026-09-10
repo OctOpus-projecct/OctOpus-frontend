@@ -20,7 +20,7 @@ public class ClientReconnectTests
     }
 
     [UnityTest]
-    public IEnumerator DisconnectAndReconnect_ReusesManagerAndReplacesNetworkPlayer()
+    public IEnumerator DisconnectAndReconnect_ReusesManagerAndReplacesPlayerAndTreeInstances()
     {
         string serverPath = Path.GetFullPath(Path.Combine(Application.dataPath,
             "../../../OctOpus-backend/Builds/WindowsServer/OctOpusServer.exe"));
@@ -63,6 +63,13 @@ public class ClientReconnectTests
             Assert.That(firstPlayer.IsOwner, Is.True);
             Assert.That(firstPlayer.OwnerId, Is.EqualTo(firstId));
             int firstInstance = firstPlayer.GetInstanceID();
+            deadline = Time.realtimeSinceStartup + 10f;
+            while (UnityEngine.Object.FindFirstObjectByType<NetworkTree>() == null && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            var firstTrees = UnityEngine.Object.FindObjectsByType<NetworkTree>(FindObjectsSortMode.None);
+            Assert.That(firstTrees.Length, Is.EqualTo(1), "Initial join must spawn exactly one tree.");
+            int firstTreeInstance = firstTrees[0].GetInstanceID();
+            int serverTreeId = firstTrees[0].NetworkObject.ObjectId;
             firstPlayer.RequestMove(new Vector3(3f, 0f, 2f));
             deadline = Time.realtimeSinceStartup + 8f;
             while (Vector3.Distance(firstPlayer.ServerPosition, new Vector3(3f, 1f, 2f)) > 0.02f && Time.realtimeSinceStartup < deadline)
@@ -77,6 +84,12 @@ public class ClientReconnectTests
             yield return null;
             Assert.That(manager.TransportManager.Transport.GetConnectionState(false), Is.EqualTo(LocalConnectionState.Stopped));
             Assert.That(UnityEngine.Object.FindFirstObjectByType<NetworkPlayer>(), Is.Null);
+            deadline = Time.realtimeSinceStartup + 5f;
+            while (UnityEngine.Object.FindObjectsByType<NetworkTree>(FindObjectsSortMode.None).Length != 0 &&
+                   Time.realtimeSinceStartup < deadline)
+                yield return null;
+            Assert.That(UnityEngine.Object.FindObjectsByType<NetworkTree>(FindObjectsSortMode.None).Length,
+                Is.Zero, "Disconnect must remove the client's tree instance.");
 
             client.Connect();
             deadline = Time.realtimeSinceStartup + 15f;
@@ -94,6 +107,15 @@ public class ClientReconnectTests
             Assert.That(secondPlayer.OwnerId, Is.EqualTo(manager.ClientManager.Connection.ClientId));
             Assert.That(secondPlayer.GetInstanceID(), Is.Not.EqualTo(firstInstance));
             Assert.That(UnityEngine.Object.FindObjectsByType<NetworkPlayer>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
+            deadline = Time.realtimeSinceStartup + 10f;
+            while (UnityEngine.Object.FindFirstObjectByType<NetworkTree>() == null && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            var secondTrees = UnityEngine.Object.FindObjectsByType<NetworkTree>(FindObjectsSortMode.None);
+            Assert.That(secondTrees.Length, Is.EqualTo(1), "Reconnect must spawn exactly one tree without duplicates.");
+            Assert.That(secondTrees[0].GetInstanceID(), Is.Not.EqualTo(firstTreeInstance),
+                "Reconnect must create a fresh client tree instance.");
+            Assert.That(secondTrees[0].NetworkObject.ObjectId, Is.EqualTo(serverTreeId),
+                "The same server tree must survive the client's disconnect.");
         }
         finally
         {
