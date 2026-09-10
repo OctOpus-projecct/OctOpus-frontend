@@ -1,0 +1,7 @@
+{
+  "name": "OctOpus.Client",
+  "references": [
+    "OctOpus.Shared",
+    "FishNet.Runtime"
+  ]
+}

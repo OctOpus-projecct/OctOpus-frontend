@@ -1,0 +1,11 @@
+{
+  "name": "OctOpus.Client.Tests",
+  "references": [
+    "OctOpus.Client",
+    "FishNet.Runtime"
+  ],
+  "includePlatforms": [],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}
