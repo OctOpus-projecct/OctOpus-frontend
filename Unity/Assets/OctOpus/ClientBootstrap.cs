@@ -18,7 +18,8 @@ public sealed class ClientBootstrap : MonoBehaviour
     private Collider ground;
     private MaterialPropertyBlock playerColor;
     private float nextPositionLog;
-    private Vector2 playerListScroll;
+    private Vector2 panelScroll;
+    private NetworkTree selectedTree;
     private static readonly string[] ButtonNames = { "Left", "Right", "Middle" };
     private static readonly int ColorId = Shader.PropertyToID("_Color");
 
@@ -38,6 +39,9 @@ public sealed class ClientBootstrap : MonoBehaviour
         ground = GameObject.Find("Test Ground")?.GetComponent<Collider>();
         if (Array.IndexOf(Environment.GetCommandLineArgs(), "-octopus-movement-test") >= 0)
             gameObject.AddComponent<MovementTestHarness>();
+        if (Environment.GetCommandLineArgs().Any(argument => argument == "-octopus-tree-test" ||
+                argument == "-octopus-tree-contender" || argument == "-octopus-tree-observer"))
+            gameObject.AddComponent<TreeTestHarness>();
         if (Array.IndexOf(Environment.GetCommandLineArgs(), "-octopus-connect") >= 0)
             Connect();
     }
@@ -54,6 +58,7 @@ public sealed class ClientBootstrap : MonoBehaviour
     private void OnConnectionState(ClientConnectionStateArgs args)
     {
         state = args.ConnectionState;
+        if (state == LocalConnectionState.Stopped) selectedTree = null;
         Debug.Log("[OctOpus] Client=" + state);
     }
 
@@ -105,16 +110,41 @@ public sealed class ClientBootstrap : MonoBehaviour
             return;
         var owner = players.FirstOrDefault(player => player.IsOwner);
         var camera = Camera.main;
-        if (owner == null || camera == null || ground == null) return;
-        if (ground.Raycast(camera.ScreenPointToRay(Input.mousePosition), out RaycastHit hit, 1000f))
+        if (owner == null || camera == null) return;
+        Ray ray = camera.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit = default;
+        bool hitGround = ground != null && ground.Raycast(ray, out hit, 1000f);
+        NetworkTree tree = FindTree(ray, hitGround ? hit.distance : 1000f);
+        if (tree != null)
+        {
+            selectedTree = tree;
+            owner.RequestWork(tree.NetworkObject);
+        }
+        else if (hitGround)
             owner.RequestMove(hit.point);
+    }
+
+    public static NetworkTree FindTree(Ray ray, float maxDistance)
+    {
+        NetworkTree nearest = null;
+        float nearestDistance = float.PositiveInfinity;
+        foreach (RaycastHit hit in Physics.RaycastAll(ray, maxDistance, Physics.DefaultRaycastLayers,
+                     QueryTriggerInteraction.Ignore))
+        {
+            NetworkTree tree = hit.collider.GetComponentInParent<NetworkTree>();
+            if (tree == null || hit.distance >= nearestDistance) continue;
+            nearest = tree;
+            nearestDistance = hit.distance;
+        }
+        return nearest;
     }
 
     private void OnGUI()
     {
         if (manager == null) return;
         GUILayout.BeginArea(MovementInput.PanelRect, GUI.skin.box);
-        GUILayout.Label("OctOpus | Click movement prototype");
+        GUILayout.Label("OctOpus | Tree interaction prototype");
+        panelScroll = GUILayout.BeginScrollView(panelScroll);
         GUILayout.Label("Server address (UDP " + NetworkDefaults.Port + ")");
         GUI.enabled = state == LocalConnectionState.Stopped;
         address = GUILayout.TextField(address, 253);
@@ -124,17 +154,34 @@ public sealed class ClientBootstrap : MonoBehaviour
         GUI.enabled = true;
         GUILayout.Label("Status: " + state);
         GUILayout.Label("Players: " + roster.Length + " / " + NetworkDefaults.MaximumPlayers);
-        GUILayout.Label("Move mouse button (saved)");
+        GUILayout.Label("Move / select tree mouse button (saved)");
         int selected = GUILayout.Toolbar(movementInput.Button, ButtonNames);
         if (selected != movementInput.Button) movementInput.SetButton(selected);
         GUILayout.Label("You: green | Others: orange");
+        GUILayout.Label("Click tree: approach and request work.");
+        GUILayout.Label("Click ground: cancel work and move.");
+        GUILayout.Label("Selection is local; work state is from server.");
+        NetworkPlayer owner = players.FirstOrDefault(player => player.IsOwner);
+        GUILayout.Label("Your activity: " + (owner == null ? "-" : owner.Activity.ToString()));
+        GUILayout.Label("Last server result: " + (owner == null ? "-" : owner.LastWorkResult.ToString()));
+        if (selectedTree == null)
+            GUILayout.Label("Selected tree: none");
+        else
+        {
+            GUILayout.Label("Selected tree: " + selectedTree.NetworkObject.ObjectId);
+            GUILayout.Label("Worker: " + (selectedTree.WorkerId < 0 ? "Free" :
+                "Player " + selectedTree.WorkerId +
+                (owner != null && owner.OwnerId == selectedTree.WorkerId ? " (You)" : "")));
+            GUILayout.Label(string.Format(CultureInfo.InvariantCulture,
+                "Server time remaining: {0:F1}s", selectedTree.SecondsRemaining));
+        }
+        GUILayout.Label("Work session only; strikes / rewards come later.");
         GUILayout.Label("Positions confirmed by server:");
-        playerListScroll = GUILayout.BeginScrollView(playerListScroll, GUILayout.MaxHeight(180));
         foreach (NetworkPlayer player in players)
         {
             Vector3 position = player.ServerPosition;
-            GUILayout.Label(string.Format(CultureInfo.InvariantCulture, "Player {0}{1}  ({2:F1}, {3:F1})",
-                player.OwnerId, player.IsOwner ? " (You)" : "", position.x, position.z));
+            GUILayout.Label(string.Format(CultureInfo.InvariantCulture, "Player {0}{1}  ({2:F1}, {3:F1}) | {4}",
+                player.OwnerId, player.IsOwner ? " (You)" : "", position.x, position.z, player.Activity));
         }
         GUILayout.EndScrollView();
         GUILayout.EndArea();
