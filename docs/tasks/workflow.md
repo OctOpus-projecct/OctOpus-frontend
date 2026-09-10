@@ -1,12 +1,14 @@
 # 개발·검증 절차
 
 ## 현재 상태
-Unity 프로젝트, 패키지 버전, 게임 빌드·테스트 명령은 아직 없다. 문서 검사 스크립트와 GitHub Actions 설정은 추가되어 있으며, 원격 CI 실행은 아직 확인하지 않았다.
+Unity 프로젝트, 패키지 버전, 게임 빌드·테스트 명령은 아직 없다. 문서 검사 스크립트와 GitHub Actions는 원격에 반영했다. CI 결과는 해당 커밋의 GitHub Actions 기록을 기준으로 확인한다.
 
 ## 문서 검증
 저장소 루트에서 PowerShell 7의 `pwsh -NoProfile -File scripts/check-docs.ps1`을 실행한다. 검사기 회귀 검증은 `pwsh -NoProfile -File scripts/test-check-docs.ps1`이다.
 
-필수 지침·템플릿과 Markdown 인라인 파일 링크를 확인한다. 외부 URL·헤딩 앵커·참조형 링크는 검사하지 않는다. 상대 저장소가 없는 단독 체크아웃에서는 해당 링크를 명시적으로 SKIP하며, 양쪽이 있으면 함께 검사한다. GitHub에서는 `.github/workflows/docs.yml`의 `docs-check`가 PR·main 푸시에 같은 검사를 수행하도록 구성했다. 저장소 보호 규칙은 아직 설정하지 않았다.
+필수 지침·템플릿과 Markdown 인라인 파일 링크를 확인한다. 외부 URL·헤딩 앵커·참조형 링크는 검사하지 않는다. 상대 저장소가 없는 단독 체크아웃에서는 해당 링크를 명시적으로 SKIP하며, 양쪽이 있으면 함께 검사한다. GitHub에서는 `.github/workflows/docs.yml`의 `docs-check`가 PR·main 푸시에 같은 검사를 수행한다.
+
+2026-09-10 기준 main은 PR·최신 기준 브랜치 반영·GitHub Actions의 docs-check 통과·리뷰 대화 해결을 요구한다. 관리자에도 적용하며 강제 푸시·삭제는 금지한다. 1인 개발을 위해 타인의 필수 승인 수는 0명이다. 문서의 별도 검토 절차와 사용자 병합 결정은 그대로 적용한다. 이후 설정 변경 시 실제 GitHub 상태와 이 문서를 함께 갱신한다.
 
 이슈·커밋·리뷰는 [이슈 규칙](issues.md), [Git 절차](git-workflow.md), [리뷰 기준](review.md)을 따른다. 공통 규칙·템플릿·검사기를 수정하면 두 저장소를 함께 갱신한다.
 
