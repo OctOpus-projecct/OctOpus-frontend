@@ -65,7 +65,7 @@ try {
     }
     foreach ($relative in @('docs/tasks', 'docs', '.github/ISSUE_TEMPLATE', '.github', '')) {
         $directory = if ($relative) { Join-Path $fixture $relative } else { $fixture }
-        if (Test-Path -LiteralPath $directory) { Remove-Item -LiteralPath $directory }
+        if (Test-Path -LiteralPath $directory) { Remove-Item -LiteralPath $directory -Force }
     }
     if (Test-Path -LiteralPath $sibling) { Remove-Item -LiteralPath $sibling }
     if (Test-Path -LiteralPath $container) { Remove-Item -LiteralPath $container }
