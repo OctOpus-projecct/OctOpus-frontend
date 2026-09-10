@@ -8,11 +8,12 @@
 | 제품 요구사항 | [요구사항](../../OctOpus-backend/docs/product/requirements.md) | `docs/product/requirements.md` |
 | 단계별 개발 | [개발 단계](../../OctOpus-backend/docs/roadmap.md) | `docs/roadmap.md` |
 | 구조·공용 코드 | [아키텍처](../../OctOpus-backend/docs/architecture.md) | `docs/architecture.md` |
+| 고정 버전·설치 모듈 | [기술 선정](../../OctOpus-backend/docs/technology-selection.md) | `docs/technology-selection.md` |
 
 이 상대 링크는 두 저장소가 같은 부모 디렉터리에 있을 때 유효하다. GitHub에서는 백엔드 저장소의 명시된 경로를 직접 연다. 다른 위치에 체크아웃했으면 실제 백엔드 위치를 확인하고 읽는다.
 
 ## 현재 방향
-PC 설치형 3D 쿼터뷰, 최대 10명, 생활직업부터 개발한다. 첫 목표는 접속·클릭 이동·벌목·목재 저장·나무꾼 전직까지다. Unity + C# 클라이언트와 Unity 전용 서버를 기준안으로 하며 버전·라이브러리는 아직 미정이다.
+PC 설치형 3D 쿼터뷰, 최대 10명, 생활직업부터 개발한다. 첫 목표는 접속·클릭 이동·벌목·목재 저장·나무꾼 전직까지다. Unity 6.3 LTS + C#, FishNet, Windows 클라이언트·Linux 전용 서버, 백엔드 소유 공용 Unity 패키지를 확정했다. 정확한 Editor·FishNet 버전과 설치 모듈은 위 기술 선정 문서를 따른다. 설치·임포트·게임 빌드·접속 검증은 아직 수행하지 않았다.
 
 클라이언트는 입력과 표현을 맡는다. 서버는 게임 규칙과 아이템 변경을 최종 판정한다. 프런트엔드·백엔드라는 저장소 이름이 웹 앱 구조를 의미하지 않는다.
 
@@ -20,7 +21,7 @@ PC 설치형 3D 쿼터뷰, 최대 10명, 생활직업부터 개발한다. 첫 �
 `AGENTS.md`는 짧은 공통 작업 규칙, `docs/agent-routing.md`는 작업별 문서 진입점, `docs/tasks/`는 유형별 구현·검증 안내다. Unity 코드·장면·빌드 환경은 아직 없다.
 
 ## 첫 설정 작업에서 추가할 사항
-- 엔진 버전, 대상 PC OS, 실제 프로젝트 경로와 공용 패키지 참조 방법.
+- 선정한 버전·대상 OS를 프로젝트 설정에 반영하고 실제 프로젝트 경로와 공용 패키지 SHA를 기록.
 - 실행이 확인된 로컬 실행·빌드·테스트 명령.
 - 최소 장면, 자산 관리·Git 제외 규칙, 키 설정 및 네트워크 기반.
 - 로컬 전용 서버와 클라이언트 2개를 연결하는 검증 절차.
