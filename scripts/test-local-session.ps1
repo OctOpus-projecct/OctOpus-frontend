@@ -2,7 +2,8 @@ param(
     [string]$ServerPath = "$PSScriptRoot/../../OctOpus-backend/Builds/WindowsServer/OctOpusServer.exe",
     [string]$ClientPath = "$PSScriptRoot/../Builds/WindowsClient/OctOpus.exe",
     [switch]$ExternalServer,
-    [string]$ServerAddress = '127.0.0.1'
+    [string]$ServerAddress = '127.0.0.1',
+    [switch]$Movement
 )
 $ErrorActionPreference = 'Stop'
 $requiredFiles = @($ClientPath)
@@ -62,13 +63,40 @@ try {
     if ($conflict.ExitCode -eq 0) { throw 'Port-conflicting server reported success.' }
     Write-Output 'Port conflict produces a nonzero exit.'
     }
-    $first = Start-Game $ClientPath "$output/client1.log" '-octopus-connect'
-    $null = Wait-Roster "$output/client1.log" 1 $first
+    $firstArguments = '-octopus-connect'
+    if ($Movement) { $firstArguments += ' -octopus-movement-test' }
+    $first = Start-Game $ClientPath "$output/client1.log" $firstArguments
+    $firstOwner = Wait-Roster "$output/client1.log" 1 $first
     $second = Start-Game $ClientPath "$output/client2.log" '-octopus-connect'
     $one = Wait-Roster "$output/client1.log" 2 $first
     $two = Wait-Roster "$output/client2.log" 2 $second
     if ($one -ne $two) { throw "Clients disagree on roster: $one / $two" }
     Write-Output "Two clients connected: $one"
+    if ($Movement) {
+        $deadline = [DateTime]::UtcNow.AddSeconds(60)
+        $movementPassed = $false
+        do {
+            if ($first.HasExited -or $second.HasExited) { throw 'Client exited during movement.' }
+            $body = Get-Content "$output/client1.log" -Raw
+            if ($body.Contains('[OctOpus] MovementTest=Failed')) { throw "Movement harness failed: $output" }
+            $arrival = "[OctOpus] Position=${firstOwner}:3.000,1.000,-2.000"
+            $renderArrival = "[OctOpus] Render=${firstOwner}:3.000,1.000,-2.000"
+            if ($body.Contains('[OctOpus] MovementTest=Passed') -and $body.Contains($arrival) -and
+                $body.Contains('[OctOpus] MovementStage=InitialProgress') -and $body.Contains($renderArrival) -and
+                (Select-String -LiteralPath "$output/client2.log" -SimpleMatch -Pattern $arrival -Quiet) -and
+                (Select-String -LiteralPath "$output/client2.log" -SimpleMatch -Pattern $renderArrival -Quiet)) {
+                $movementPassed = $true
+                break
+            }
+            Start-Sleep -Milliseconds 250
+        } while ([DateTime]::UtcNow -lt $deadline)
+        if (-not $movementPassed) { throw "Movement did not converge on both clients: $output" }
+        if (-not $ExternalServer) {
+            $rejected = @(Select-String -LiteralPath "$output/server.log" -Pattern '^\[OctOpus\] MoveRejected=')
+            if ($rejected.Count -lt 2) { throw 'Invalid destination requests did not reach server validation.' }
+        }
+        Write-Output 'Movement, target replacement, invalid requests and ownership checks passed; both clients agree on arrival.'
+    }
     $second.Kill()
     $second.WaitForExit()
     $null = Wait-Roster "$output/client1.log" 1 $first
