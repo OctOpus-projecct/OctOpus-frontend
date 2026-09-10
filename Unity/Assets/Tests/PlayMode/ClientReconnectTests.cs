@@ -3,7 +3,9 @@ using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using FishNet.Managing;
+using FishNet.Transporting;
 using NUnit.Framework;
+using OctOpus.Shared;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -18,7 +20,7 @@ public class ClientReconnectTests
     }
 
     [UnityTest]
-    public IEnumerator DisconnectAndReconnect_ReusesManagerAndReplacesMarkers()
+    public IEnumerator DisconnectAndReconnect_ReusesManagerAndReplacesNetworkPlayer()
     {
         string serverPath = Path.GetFullPath(Path.Combine(Application.dataPath,
             "../../../OctOpus-backend/Builds/WindowsServer/OctOpusServer.exe"));
@@ -53,16 +55,28 @@ public class ClientReconnectTests
             Assert.That(manager.ClientManager.Connection.IsAuthenticated, Is.True);
             yield return null;
             int firstId = manager.ClientManager.Connection.ClientId;
-            Assert.That(GameObject.Find("Player " + firstId), Is.Not.Null);
+            deadline = Time.realtimeSinceStartup + 10f;
+            while (UnityEngine.Object.FindFirstObjectByType<NetworkPlayer>() == null && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            var firstPlayer = UnityEngine.Object.FindFirstObjectByType<NetworkPlayer>();
+            Assert.That(firstPlayer, Is.Not.Null, "Authenticated connection must spawn a network player.");
+            Assert.That(firstPlayer.IsOwner, Is.True);
+            Assert.That(firstPlayer.OwnerId, Is.EqualTo(firstId));
+            int firstInstance = firstPlayer.GetInstanceID();
+            firstPlayer.RequestMove(new Vector3(3f, 0f, 2f));
+            deadline = Time.realtimeSinceStartup + 8f;
+            while (Vector3.Distance(firstPlayer.ServerPosition, new Vector3(3f, 1f, 2f)) > 0.02f && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            Assert.That(Vector3.Distance(firstPlayer.ServerPosition, new Vector3(3f, 1f, 2f)), Is.LessThan(0.02f));
 
             client.Disconnect();
             deadline = Time.realtimeSinceStartup + 10f;
-            while (manager.IsClientStarted && Time.realtimeSinceStartup < deadline)
+            while (manager.TransportManager.Transport.GetConnectionState(false) != LocalConnectionState.Stopped && Time.realtimeSinceStartup < deadline)
                 yield return null;
             yield return null;
             yield return null;
-            Assert.That(manager.IsClientStarted, Is.False);
-            Assert.That(GameObject.Find("Player " + firstId), Is.Null);
+            Assert.That(manager.TransportManager.Transport.GetConnectionState(false), Is.EqualTo(LocalConnectionState.Stopped));
+            Assert.That(UnityEngine.Object.FindFirstObjectByType<NetworkPlayer>(), Is.Null);
 
             client.Connect();
             deadline = Time.realtimeSinceStartup + 15f;
@@ -71,7 +85,15 @@ public class ClientReconnectTests
             yield return null;
             Assert.That(manager.ClientManager.Connection.IsAuthenticated, Is.True);
             Assert.That(UnityEngine.Object.FindFirstObjectByType<NetworkManager>(), Is.SameAs(manager));
-            Assert.That(GameObject.Find("Player " + manager.ClientManager.Connection.ClientId), Is.Not.Null);
+            deadline = Time.realtimeSinceStartup + 10f;
+            while (UnityEngine.Object.FindFirstObjectByType<NetworkPlayer>() == null && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            var secondPlayer = UnityEngine.Object.FindFirstObjectByType<NetworkPlayer>();
+            Assert.That(secondPlayer, Is.Not.Null);
+            Assert.That(secondPlayer.IsOwner, Is.True);
+            Assert.That(secondPlayer.OwnerId, Is.EqualTo(manager.ClientManager.Connection.ClientId));
+            Assert.That(secondPlayer.GetInstanceID(), Is.Not.EqualTo(firstInstance));
+            Assert.That(UnityEngine.Object.FindObjectsByType<NetworkPlayer>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
         }
         finally
         {

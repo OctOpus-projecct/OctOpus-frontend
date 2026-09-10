@@ -2,6 +2,7 @@
   "name": "OctOpus.Client.Tests",
   "references": [
     "OctOpus.Client",
+    "OctOpus.Shared",
     "FishNet.Runtime"
   ],
   "includePlatforms": [],

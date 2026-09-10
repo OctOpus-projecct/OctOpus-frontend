@@ -20,7 +20,8 @@ if ($Task -eq 'Test') {
     $target = if ($Task -eq 'BuildLinux') { 'Linux64' } else { 'Win64' }
     $arguments += " -quit -buildTarget $target -standaloneBuildSubtarget Player -executeMethod ProjectSetup.$method"
 }
-$process = Start-Process -FilePath $EditorPath -ArgumentList $arguments -WindowStyle Hidden -PassThru -Wait
+$process = Start-Process -FilePath $EditorPath -ArgumentList $arguments -WindowStyle Hidden -PassThru
+$process.WaitForExit()
 if ($process.ExitCode -ne 0) { throw "Unity $Task failed ($($process.ExitCode)). See $log" }
 if ($Task -eq 'Test') {
     if (-not (Test-Path -LiteralPath $report)) { throw "Unity did not produce a test report. See $log" }

@@ -3,7 +3,7 @@
 ## 프로젝트와 현재 상태
 - 친구들과 즐기는 비상업적 PC 설치형 3D 쿼터뷰 온라인 RPG. 동시 접속 상한은 10명이다.
 - 이 저장소는 게임 클라이언트다. 웹 프런트엔드로 가정하거나 웹 프레임워크를 초기화하지 않는다.
-- `Unity`에 최소 접속 확인용 클라이언트가 있다. Unity 6.3 LTS + C#, FishNet, Windows 클라이언트·Linux 전용 서버를 사용한다. [초기 구성 안내](docs/unity-setup.md)의 실행 명령과 검증 범위를 따르고, [프로젝트 안내](docs/project.md)에서 기술 선정 원본을 확인한다.
+- `Unity`에 접속·클릭 이동 확인용 클라이언트가 있다. Unity 6.3 LTS + C#, FishNet, Windows 클라이언트·Linux 전용 서버를 사용한다. [초기 구성 안내](docs/unity-setup.md)의 실행 명령과 검증 범위를 따르고, [프로젝트 안내](docs/project.md)에서 기술 선정 원본을 확인한다.
 
 ## 작업 시작
 1. `git status --short`로 기존 변경을 확인하고 사용자 변경을 보존한다.
