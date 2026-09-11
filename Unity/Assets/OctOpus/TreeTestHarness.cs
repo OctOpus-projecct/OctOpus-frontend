@@ -31,9 +31,9 @@ public sealed class TreeTestHarness : MonoBehaviour
                 player.Activity == PlayerActivity.Working), 20, "LateJoinObserved");
             if (failed) yield break;
             yield return new WaitForSecondsRealtime(1);
-            if (FindObjectsByType<NetworkTree>(FindObjectsSortMode.None).Length != 1)
-            { Fail("Late join must observe exactly one tree"); yield break; }
-            Stage("SingleTreeObserved");
+            if (FindObjectsByType<NetworkTree>(FindObjectsSortMode.None).Length != WorldLayout.TreePositions.Count)
+            { Fail("Late join must observe the complete world tree set"); yield break; }
+            Stage("WorldTreesObserved");
         }
         else if (Array.IndexOf(args, "-octopus-tree-contender") >= 0)
             yield return Contender();
@@ -86,6 +86,10 @@ public sealed class TreeTestHarness : MonoBehaviour
         owner.RequestWork(tree.NetworkObject);
         yield return Wait(Working, 15, "ReadyForDisconnect");
         if (failed) yield break;
+        owner.RequestStrike();
+        yield return Wait(() => tree.Health < tree.MaximumHealth && owner.StrikeSequence > 0,
+            3, "DamagedBeforeDisconnect");
+        if (failed) yield break;
         int markerIndex = Array.IndexOf(args, "-octopus-tree-disconnect-marker");
         if (markerIndex < 0 || markerIndex + 1 >= args.Length)
         { Fail("Disconnect marker argument missing"); yield break; }
@@ -105,7 +109,8 @@ public sealed class TreeTestHarness : MonoBehaviour
         yield return Wait(() => owner.LastWorkResult == WorkResult.Busy && owner.Activity == PlayerActivity.Idle &&
             tree.WorkerId == originalWorker, 15, "Busy");
         if (failed) yield break;
-        yield return Wait(() => !Players().Any(player => player.OwnerId == originalWorker) && tree.WorkerId == -1,
+        yield return Wait(() => !Players().Any(player => player.OwnerId == originalWorker) && tree.WorkerId == -1 &&
+            tree.Health == tree.MaximumHealth,
             110, "DisconnectedWorkerReleased");
         if (failed) yield break;
         owner.RequestWork(tree.NetworkObject);
