@@ -21,3 +21,9 @@
 *.log
 TestResults/
 .worktrees/
+
+# Local account data and TLS private material
+ServerData/
+*.pfx
+*.key
+server-pin.txt

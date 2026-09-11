@@ -23,7 +23,7 @@ function Start-Game([string]$file, [string]$log, [string[]]$extra = @()) {
     $start.UseShellExecute = $false
     $start.CreateNoWindow = $true
     $start.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
-    foreach ($argument in (@('-batchmode', '-nographics', '-logFile', $log) + $extra)) {
+    foreach ($argument in (@('-batchmode', '-nographics', '-octopus-anonymous-regression', '-logFile', $log) + $extra)) {
         $start.ArgumentList.Add($argument)
     }
     $start.Environment['OCTOPUS_SERVER_ADDRESS'] = $ServerAddress
