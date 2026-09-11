@@ -30,7 +30,7 @@ public class ClientReconnectTests
         Directory.CreateDirectory(output);
         string log = Path.Combine(output, "reconnect-server-" + Guid.NewGuid().ToString("N") + ".log");
         var server = Process.Start(new ProcessStartInfo(serverPath,
-            "-batchmode -nographics -logFile \"" + log + "\"")
+            "-batchmode -nographics -octopus-anonymous-regression -logFile \"" + log + "\"")
         {
             UseShellExecute = false,
             CreateNoWindow = true,
@@ -47,6 +47,7 @@ public class ClientReconnectTests
 
             root = new GameObject("Client under test");
             var client = root.AddComponent<ClientBootstrap>();
+            client.UseAnonymousRegression = true;
             yield return null;
             var manager = UnityEngine.Object.FindFirstObjectByType<NetworkManager>();
             client.Connect();
