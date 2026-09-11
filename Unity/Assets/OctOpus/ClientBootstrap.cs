@@ -1,14 +1,30 @@
 using System;
 using System.Globalization;
 using System.Linq;
+using System.IO;
+using System.Collections;
+using System.Threading;
+using System.Threading.Tasks;
 using FishNet.Managing;
 using FishNet.Transporting;
 using OctOpus.Shared;
 using UnityEngine;
 
-public sealed class ClientBootstrap : MonoBehaviour
+public sealed partial class ClientBootstrap : MonoBehaviour
 {
     private NetworkManager manager;
+    private AccountAuthenticator accountAuthenticator;
+    private string loginName = "";
+    private string loginPassword = "";
+    private string certificatePin = "";
+    private string authenticationStatus = "Not connected";
+    private string loginHost, loginPin, attemptName, attemptPassword;
+    private CancellationTokenSource loginCancellation;
+    private int loginGeneration;
+    private bool loginInFlight, attemptedLogin, wasAuthenticated;
+    public bool UseAnonymousRegression { get; set; }
+    public bool LoginFailed { get; private set; }
+    public LocalConnectionState ConnectionState => state;
     private string address = NetworkDefaults.LocalAddress;
     private LocalConnectionState state = LocalConnectionState.Stopped;
     private string lastRoster;
@@ -40,7 +56,21 @@ public sealed class ClientBootstrap : MonoBehaviour
         string configuredAddress = Environment.GetEnvironmentVariable("OCTOPUS_SERVER_ADDRESS");
         if (!string.IsNullOrWhiteSpace(configuredAddress)) address = configuredAddress.Trim();
         manager = NetworkFactory.Create();
+        if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OCTOPUS_UI_CAPTURE"))) gameObject.AddComponent<CozyPreview>();
         manager.ClientManager.OnClientConnectionState += OnConnectionState;
+        UseAnonymousRegression |= Array.IndexOf(Environment.GetCommandLineArgs(), "-octopus-anonymous-regression") >= 0;
+        loginName = Environment.GetEnvironmentVariable("OCTOPUS_LOGIN_NAME") ?? "";
+        loginPassword = Environment.GetEnvironmentVariable("OCTOPUS_LOGIN_PASSWORD") ?? "";
+        certificatePin = Environment.GetEnvironmentVariable("OCTOPUS_AUTH_PIN") ?? "";
+        string pinPath = Path.Combine(Path.GetDirectoryName(Application.dataPath), "server-pin.txt");
+        if (certificatePin.Length == 0 && File.Exists(pinPath)) certificatePin = File.ReadAllText(pinPath).Trim();
+        if (!UseAnonymousRegression)
+        {
+            accountAuthenticator = manager.gameObject.AddComponent<AccountAuthenticator>();
+            accountAuthenticator.InitializeOnce(manager);
+            accountAuthenticator.ChallengeReceived += BeginLogin;
+            accountAuthenticator.ClientStatusChanged += OnAuthenticationStatus;
+        }
         var mapView = GetComponent<PrototypeMapView>() ?? gameObject.AddComponent<PrototypeMapView>();
         mapView.EnsureBuilt(GameObject.Find("Test Ground"), Camera.main);
         ground = GameObject.Find("Test Ground")?.GetComponent<Collider>();
@@ -58,21 +88,86 @@ public sealed class ClientBootstrap : MonoBehaviour
             gameObject.AddComponent<MapTestHarness>();
         if (Environment.GetCommandLineArgs().Any(argument => argument == "-octopus-inventory-test" || argument == "-octopus-inventory-observer"))
             gameObject.AddComponent<InventoryTestHarness>();
+        if (Array.IndexOf(Environment.GetCommandLineArgs(), "-octopus-account-test") >= 0)
+            gameObject.AddComponent<AccountTestHarness>();
     }
 
     public void Connect()
     {
         string target = address.Trim();
         if (target.Length == 0 || state != LocalConnectionState.Stopped) return;
+        if (!UseAnonymousRegression && (certificatePin.Trim().Length != 64 || loginName.Length == 0 || loginPassword.Length == 0))
+        {
+            authenticationStatus = "Enter login, password and trusted server fingerprint.";
+            LoginFailed = true;
+            return;
+        }
+        loginGeneration++;
+        loginCancellation?.Cancel();
+        loginCancellation?.Dispose();
+        loginCancellation = new CancellationTokenSource();
+        loginHost = target; loginPin = certificatePin.Trim();
+        attemptName = loginName; attemptPassword = loginPassword;
+        loginInFlight = false; LoginFailed = false; attemptedLogin = true; wasAuthenticated = false;
+        authenticationStatus = UseAnonymousRegression ? "Anonymous regression test" : "Connecting";
         manager.ClientManager.StartConnection(target, NetworkDefaults.Port);
     }
 
-    public void Disconnect() { manager.ClientManager.StopConnection(); }
+    public void Disconnect()
+    {
+        rebindingStrike = false;
+        clearGuiFocus = true;
+        loginGeneration++;
+        loginCancellation?.Cancel();
+        manager.ClientManager.StopConnection();
+    }
+
+    private void OnAuthenticationStatus(string status)
+    {
+        authenticationStatus = status;
+        if (status == "Authenticated") wasAuthenticated = true;
+        if (status.IndexOf("rejected", StringComparison.OrdinalIgnoreCase) >= 0) LoginFailed = true;
+    }
+    private void BeginLogin(string challenge)
+    {
+        if (loginInFlight || loginCancellation == null || loginCancellation.IsCancellationRequested) return;
+        loginInFlight = true;
+        StartCoroutine(CompleteLogin(challenge, loginGeneration));
+    }
+    private IEnumerator CompleteLogin(string challenge, int generation)
+    {
+        authenticationStatus = "Checking account...";
+        Task<string> task = LoginTlsClient.LoginAsync(loginHost, 7771, loginPin, attemptName, attemptPassword,
+            challenge, loginCancellation.Token);
+        while (!task.IsCompleted && generation == loginGeneration) yield return null;
+        if (generation != loginGeneration) yield break;
+        if (task.IsCanceled || task.IsFaulted)
+        {
+            // Never echo exceptions containing user-provided login fields.
+            if (task.IsFaulted) { var observed = task.Exception; }
+            authenticationStatus = "Login failed. Check credentials and trusted server fingerprint.";
+            LoginFailed = true;
+            Disconnect();
+            yield break;
+        }
+        accountAuthenticator.SubmitTicket(task.Result);
+    }
 
     private void OnConnectionState(ClientConnectionStateArgs args)
     {
         state = args.ConnectionState;
-        if (state == LocalConnectionState.Stopped) selectedTree = null;
+        if (state == LocalConnectionState.Stopped)
+        {
+            rebindingStrike = false;
+            settingsOpen = false;
+            bagOpen = false;
+            debugOpen = false;
+            clearGuiFocus = true;
+            selectedTree = null;
+            loginGeneration++;
+            loginCancellation?.Cancel();
+            if (!UseAnonymousRegression && attemptedLogin && !wasAuthenticated) LoginFailed = true;
+        }
         Debug.Log("[OctOpus] Client=" + state);
     }
 
@@ -122,7 +217,7 @@ public sealed class ClientBootstrap : MonoBehaviour
         var owner = players.FirstOrDefault(player => player.IsOwner);
         if (owner != null && owner.Activity == PlayerActivity.Working && Input.GetKeyDown(strikeInput.Key) &&
             strikeInput.CanStrike(Application.isFocused, Time.frameCount, uiHasKeyboardFocus, rebindingStrike) &&
-            movementInput.CanMove(Input.mousePosition, Screen.height, Application.isFocused, Time.frameCount))
+            (!UiBlocksWorld(Input.mousePosition) && movementInput.CanMove(Input.mousePosition, Screen.height, Application.isFocused, Time.frameCount, false)))
             owner.RequestStrike();
         if (Time.unscaledTime >= nextPositionLog)
         {
@@ -140,7 +235,7 @@ public sealed class ClientBootstrap : MonoBehaviour
             }
         }
         if (!Input.GetMouseButtonDown(movementInput.Button) ||
-            !movementInput.CanMove(Input.mousePosition, Screen.height, Application.isFocused, Time.frameCount))
+            !(!UiBlocksWorld(Input.mousePosition) && movementInput.CanMove(Input.mousePosition, Screen.height, Application.isFocused, Time.frameCount, false)))
             return;
         var camera = Camera.main;
         if (owner == null || camera == null) return;
@@ -175,7 +270,7 @@ public sealed class ClientBootstrap : MonoBehaviour
         return nearest;
     }
 
-    private void OnGUI()
+    private void DrawDebugPanel()
     {
         if (manager == null) return;
         if (clearGuiFocus) { GUI.FocusControl(null); clearGuiFocus = false; }
@@ -198,11 +293,24 @@ public sealed class ClientBootstrap : MonoBehaviour
         GUI.enabled = state == LocalConnectionState.Stopped;
         GUI.SetNextControlName("ServerAddress");
         address = GUILayout.TextField(address, 253);
+        if (!UseAnonymousRegression)
+        {
+            GUILayout.Label("Login name");
+            GUI.SetNextControlName("LoginName");
+            loginName = GUILayout.TextField(loginName, 32);
+            GUILayout.Label("Password (not saved)");
+            GUI.SetNextControlName("LoginPassword");
+            loginPassword = GUILayout.PasswordField(loginPassword, '*', 128);
+            GUILayout.Label("Trusted server fingerprint");
+            GUI.SetNextControlName("ServerPin");
+            certificatePin = GUILayout.TextField(certificatePin, 64);
+        }
         if (GUILayout.Button("Connect")) Connect();
         GUI.enabled = state == LocalConnectionState.Started || state == LocalConnectionState.Starting;
         if (GUILayout.Button("Disconnect")) Disconnect();
         GUI.enabled = true;
         GUILayout.Label("Status: " + state);
+        GUILayout.Label(authenticationStatus);
         GUILayout.Label("Players: " + roster.Length + " / " + NetworkDefaults.MaximumPlayers);
         GUILayout.Label("Move / select tree mouse button (saved)");
         int selected = GUILayout.Toolbar(movementInput.Button, ButtonNames);
@@ -256,7 +364,7 @@ public sealed class ClientBootstrap : MonoBehaviour
     private void DrawInventory(NetworkPlayer owner)
     {
         GUILayout.Label("Your inventory | Server confirmed");
-        GUILayout.Label("Session only: inventory resets on disconnect.");
+        GUILayout.Label(UseAnonymousRegression ? "Regression only: inventory resets on disconnect." : "Account inventory: saved by the server.");
         if (state == LocalConnectionState.Stopped || state == LocalConnectionState.Stopping)
         {
             GUILayout.Label("Inventory: not connected");
@@ -283,6 +391,15 @@ public sealed class ClientBootstrap : MonoBehaviour
 
     private void OnDestroy()
     {
+        DisposeSkin();
+        loginGeneration++;
+        loginCancellation?.Cancel();
+        loginCancellation?.Dispose();
+        if (accountAuthenticator != null)
+        {
+            accountAuthenticator.ChallengeReceived -= BeginLogin;
+            accountAuthenticator.ClientStatusChanged -= OnAuthenticationStatus;
+        }
         if (manager == null) return;
         manager.ClientManager.OnClientConnectionState -= OnConnectionState;
         manager.ClientManager.StopConnection();

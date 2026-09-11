@@ -23,7 +23,7 @@ function Start-Game([string]$file, [string]$log, [string]$extra = '') {
     $start.UseShellExecute = $false
     $start.CreateNoWindow = $true
     $start.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
-    $start.Arguments = "-batchmode -nographics -logFile `"$log`" $extra"
+    $start.Arguments = "-batchmode -nographics -octopus-anonymous-regression -logFile `"$log`" $extra"
     $start.Environment['OCTOPUS_SERVER_ADDRESS'] = $ServerAddress
     # The local regression run must retain its loopback server even if the caller configured WSL.
     $null = $start.Environment.Remove('OCTOPUS_BIND_ADDRESS')
