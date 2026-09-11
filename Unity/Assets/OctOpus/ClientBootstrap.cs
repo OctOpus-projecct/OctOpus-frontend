@@ -10,7 +10,7 @@ using FishNet.Transporting;
 using OctOpus.Shared;
 using UnityEngine;
 
-public sealed class ClientBootstrap : MonoBehaviour
+public sealed partial class ClientBootstrap : MonoBehaviour
 {
     private NetworkManager manager;
     private AccountAuthenticator accountAuthenticator;
@@ -56,6 +56,7 @@ public sealed class ClientBootstrap : MonoBehaviour
         string configuredAddress = Environment.GetEnvironmentVariable("OCTOPUS_SERVER_ADDRESS");
         if (!string.IsNullOrWhiteSpace(configuredAddress)) address = configuredAddress.Trim();
         manager = NetworkFactory.Create();
+        if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OCTOPUS_UI_CAPTURE"))) gameObject.AddComponent<CozyPreview>();
         manager.ClientManager.OnClientConnectionState += OnConnectionState;
         UseAnonymousRegression |= Array.IndexOf(Environment.GetCommandLineArgs(), "-octopus-anonymous-regression") >= 0;
         loginName = Environment.GetEnvironmentVariable("OCTOPUS_LOGIN_NAME") ?? "";
@@ -114,6 +115,8 @@ public sealed class ClientBootstrap : MonoBehaviour
 
     public void Disconnect()
     {
+        rebindingStrike = false;
+        clearGuiFocus = true;
         loginGeneration++;
         loginCancellation?.Cancel();
         manager.ClientManager.StopConnection();
@@ -155,6 +158,11 @@ public sealed class ClientBootstrap : MonoBehaviour
         state = args.ConnectionState;
         if (state == LocalConnectionState.Stopped)
         {
+            rebindingStrike = false;
+            settingsOpen = false;
+            bagOpen = false;
+            debugOpen = false;
+            clearGuiFocus = true;
             selectedTree = null;
             loginGeneration++;
             loginCancellation?.Cancel();
@@ -209,7 +217,7 @@ public sealed class ClientBootstrap : MonoBehaviour
         var owner = players.FirstOrDefault(player => player.IsOwner);
         if (owner != null && owner.Activity == PlayerActivity.Working && Input.GetKeyDown(strikeInput.Key) &&
             strikeInput.CanStrike(Application.isFocused, Time.frameCount, uiHasKeyboardFocus, rebindingStrike) &&
-            movementInput.CanMove(Input.mousePosition, Screen.height, Application.isFocused, Time.frameCount))
+            (!UiBlocksWorld(Input.mousePosition) && movementInput.CanMove(Input.mousePosition, Screen.height, Application.isFocused, Time.frameCount, false)))
             owner.RequestStrike();
         if (Time.unscaledTime >= nextPositionLog)
         {
@@ -227,7 +235,7 @@ public sealed class ClientBootstrap : MonoBehaviour
             }
         }
         if (!Input.GetMouseButtonDown(movementInput.Button) ||
-            !movementInput.CanMove(Input.mousePosition, Screen.height, Application.isFocused, Time.frameCount))
+            !(!UiBlocksWorld(Input.mousePosition) && movementInput.CanMove(Input.mousePosition, Screen.height, Application.isFocused, Time.frameCount, false)))
             return;
         var camera = Camera.main;
         if (owner == null || camera == null) return;
@@ -262,7 +270,7 @@ public sealed class ClientBootstrap : MonoBehaviour
         return nearest;
     }
 
-    private void OnGUI()
+    private void DrawDebugPanel()
     {
         if (manager == null) return;
         if (clearGuiFocus) { GUI.FocusControl(null); clearGuiFocus = false; }
@@ -383,6 +391,7 @@ public sealed class ClientBootstrap : MonoBehaviour
 
     private void OnDestroy()
     {
+        DisposeSkin();
         loginGeneration++;
         loginCancellation?.Cancel();
         loginCancellation?.Dispose();

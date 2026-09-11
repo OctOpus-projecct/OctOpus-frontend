@@ -30,9 +30,9 @@ public sealed class MovementInput
         blockedThroughFrame = frame + 1;
     }
 
-    public bool CanMove(Vector2 screenPoint, int screenHeight, bool focused, int frame)
+    public bool CanMove(Vector2 screenPoint, int screenHeight, bool focused, int frame, bool blockLegacyPanel = true)
     {
         var guiPoint = new Vector2(screenPoint.x, screenHeight - screenPoint.y);
-        return focused && frame > blockedThroughFrame && !PanelRect.Contains(guiPoint);
+        return focused && frame > blockedThroughFrame && (!blockLegacyPanel || !PanelRect.Contains(guiPoint));
     }
 }
