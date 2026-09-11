@@ -31,9 +31,9 @@ public sealed class TreeTestHarness : MonoBehaviour
                 player.Activity == PlayerActivity.Working), 20, "LateJoinObserved");
             if (failed) yield break;
             yield return new WaitForSecondsRealtime(1);
-            if (FindObjectsByType<NetworkTree>(FindObjectsSortMode.None).Length != 1)
-            { Fail("Late join must observe exactly one tree"); yield break; }
-            Stage("SingleTreeObserved");
+            if (FindObjectsByType<NetworkTree>(FindObjectsSortMode.None).Length != WorldLayout.TreePositions.Count)
+            { Fail("Late join must observe the complete world tree set"); yield break; }
+            Stage("WorldTreesObserved");
         }
         else if (Array.IndexOf(args, "-octopus-tree-contender") >= 0)
             yield return Contender();

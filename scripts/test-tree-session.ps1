@@ -82,7 +82,7 @@ try {
     $clientLogs.Add($observerLog)
     $observer = Start-Game $ClientPath $observerLog @('-octopus-connect', '-octopus-tree-observer')
     Wait-Marker $observerLog '[OctOpus] TreeStage=LateJoinObserved' $observer 20
-    Wait-Marker $observerLog '[OctOpus] TreeStage=SingleTreeObserved' $observer 3
+    Wait-Marker $observerLog '[OctOpus] TreeStage=WorldTreesObserved' $observer 3
     Wait-Marker $observerLog '[OctOpus] TreeTest=Passed' $observer 2
     Write-Output "Tree approach, contention, deadline, timeout, move cancellation, disconnect release and late join passed. Logs: $output"
 } finally {

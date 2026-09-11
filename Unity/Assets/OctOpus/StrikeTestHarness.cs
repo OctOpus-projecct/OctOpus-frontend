@@ -125,7 +125,7 @@ public sealed class StrikeTestHarness : MonoBehaviour
         yield return Wait(FullFree, 12, "Respawned");
         if (failed) yield break;
         if (tree.NetworkObject.ObjectId != objectId || tree.transform.position != originalPosition ||
-            FindObjectsByType<NetworkTree>(FindObjectsSortMode.None).Length != 1)
+            FindObjectsByType<NetworkTree>(FindObjectsSortMode.None).Length != WorldLayout.TreePositions.Count)
         { Fail("Respawn replaced, moved or duplicated the tree"); yield break; }
         Stage("RespawnIdentityPreserved");
         // Leave the free respawn visible for the observer before starting the next work cycle.

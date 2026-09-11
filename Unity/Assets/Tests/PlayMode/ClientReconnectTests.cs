@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using FishNet.Managing;
 using FishNet.Transporting;
 using NUnit.Framework;
@@ -64,12 +65,11 @@ public class ClientReconnectTests
             Assert.That(firstPlayer.OwnerId, Is.EqualTo(firstId));
             int firstInstance = firstPlayer.GetInstanceID();
             deadline = Time.realtimeSinceStartup + 10f;
-            while (UnityEngine.Object.FindFirstObjectByType<NetworkTree>() == null && Time.realtimeSinceStartup < deadline)
+            while (UnityEngine.Object.FindObjectsByType<NetworkTree>(FindObjectsSortMode.None).Length != WorldLayout.TreePositions.Count && Time.realtimeSinceStartup < deadline)
                 yield return null;
             var firstTrees = UnityEngine.Object.FindObjectsByType<NetworkTree>(FindObjectsSortMode.None);
-            Assert.That(firstTrees.Length, Is.EqualTo(1), "Initial join must spawn exactly one tree.");
-            int firstTreeInstance = firstTrees[0].GetInstanceID();
-            int serverTreeId = firstTrees[0].NetworkObject.ObjectId;
+            Assert.That(firstTrees.Length, Is.EqualTo(WorldLayout.TreePositions.Count), "Initial join must spawn the world tree set.");
+            var firstTreeInstances = firstTrees.ToDictionary(tree => tree.NetworkObject.ObjectId, tree => tree.GetInstanceID());
             firstPlayer.RequestMove(new Vector3(3f, 0f, 2f));
             deadline = Time.realtimeSinceStartup + 8f;
             while (Vector3.Distance(firstPlayer.ServerPosition, new Vector3(3f, 1f, 2f)) > 0.02f && Time.realtimeSinceStartup < deadline)
@@ -108,14 +108,17 @@ public class ClientReconnectTests
             Assert.That(secondPlayer.GetInstanceID(), Is.Not.EqualTo(firstInstance));
             Assert.That(UnityEngine.Object.FindObjectsByType<NetworkPlayer>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
             deadline = Time.realtimeSinceStartup + 10f;
-            while (UnityEngine.Object.FindFirstObjectByType<NetworkTree>() == null && Time.realtimeSinceStartup < deadline)
+            while (UnityEngine.Object.FindObjectsByType<NetworkTree>(FindObjectsSortMode.None).Length != WorldLayout.TreePositions.Count && Time.realtimeSinceStartup < deadline)
                 yield return null;
             var secondTrees = UnityEngine.Object.FindObjectsByType<NetworkTree>(FindObjectsSortMode.None);
-            Assert.That(secondTrees.Length, Is.EqualTo(1), "Reconnect must spawn exactly one tree without duplicates.");
-            Assert.That(secondTrees[0].GetInstanceID(), Is.Not.EqualTo(firstTreeInstance),
-                "Reconnect must create a fresh client tree instance.");
-            Assert.That(secondTrees[0].NetworkObject.ObjectId, Is.EqualTo(serverTreeId),
-                "The same server tree must survive the client's disconnect.");
+            Assert.That(secondTrees.Length, Is.EqualTo(WorldLayout.TreePositions.Count), "Reconnect must spawn the world tree set without duplicates.");
+            foreach (var tree in secondTrees)
+            {
+                Assert.That(firstTreeInstances.ContainsKey(tree.NetworkObject.ObjectId), Is.True,
+                    "The same server trees must survive the client's disconnect.");
+                Assert.That(tree.GetInstanceID(), Is.Not.EqualTo(firstTreeInstances[tree.NetworkObject.ObjectId]),
+                    "Reconnect must create fresh client tree instances.");
+            }
         }
         finally
         {

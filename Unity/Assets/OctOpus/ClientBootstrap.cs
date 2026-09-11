@@ -41,6 +41,8 @@ public sealed class ClientBootstrap : MonoBehaviour
         if (!string.IsNullOrWhiteSpace(configuredAddress)) address = configuredAddress.Trim();
         manager = NetworkFactory.Create();
         manager.ClientManager.OnClientConnectionState += OnConnectionState;
+        var mapView = GetComponent<PrototypeMapView>() ?? gameObject.AddComponent<PrototypeMapView>();
+        mapView.EnsureBuilt(GameObject.Find("Test Ground"), Camera.main);
         ground = GameObject.Find("Test Ground")?.GetComponent<Collider>();
         if (Array.IndexOf(Environment.GetCommandLineArgs(), "-octopus-movement-test") >= 0)
             gameObject.AddComponent<MovementTestHarness>();
@@ -52,6 +54,8 @@ public sealed class ClientBootstrap : MonoBehaviour
             gameObject.AddComponent<StrikeTestHarness>();
         if (Array.IndexOf(Environment.GetCommandLineArgs(), "-octopus-connect") >= 0)
             Connect();
+        if (Environment.GetCommandLineArgs().Any(argument => argument == "-octopus-map-test" || argument == "-octopus-map-partner"))
+            gameObject.AddComponent<MapTestHarness>();
     }
 
     public void Connect()
@@ -186,7 +190,7 @@ public sealed class ClientBootstrap : MonoBehaviour
             }
         }
         GUILayout.BeginArea(MovementInput.PanelRect, GUI.skin.box);
-        GUILayout.Label("OctOpus | Axe strike prototype");
+        GUILayout.Label("OctOpus | Life test map");
         panelScroll = GUILayout.BeginScrollView(panelScroll);
         GUILayout.Label("Server address (UDP " + NetworkDefaults.Port + ")");
         GUI.enabled = state == LocalConnectionState.Stopped;
@@ -207,6 +211,8 @@ public sealed class ClientBootstrap : MonoBehaviour
             strikeInput.UpdateFocus(Time.frameCount);
         }
         GUILayout.Label("You: green | Others: orange");
+        GUILayout.Label("Spawn clearing / Guide marker / Logging grove");
+        GUILayout.Label("Guide marks a future tutorial location.");
         GUILayout.Label("Click tree: approach and request work.");
         GUILayout.Label("Click ground: cancel work and move.");
         GUILayout.Label("Selection is local; work state is from server.");
