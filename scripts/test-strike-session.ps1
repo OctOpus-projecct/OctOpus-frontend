@@ -52,7 +52,7 @@ function Wait-Marker([string]$log, [string]$marker, [Diagnostics.Process]$proces
 }
 try {
     if (-not $ExternalServer) {
-        $server = Start-Game $ServerPath "$output/server.log"
+        $server = Start-Game $ServerPath "$output/server.log" @('-octopus-stamina-baseline-test')
         Wait-Marker "$output/server.log" '[OctOpus] Server=Started' $server
     }
     $workerLog = "$output/worker.log"
