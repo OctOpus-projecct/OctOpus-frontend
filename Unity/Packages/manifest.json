@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.octopus.shared": "https://github.com/OctOpus-projecct/OctOpus-backend.git?path=/Packages/com.octopus.shared#b72ed5fe7b6a6743847265cf868705aac746be1a",
+    "com.octopus.shared": "https://github.com/OctOpus-projecct/OctOpus-backend.git?path=/Packages/com.octopus.shared#980f532dd61ad2b59ecdc0c7e1462c5f1a32fc8b",
     "com.firstgeargames.fishnet": "https://github.com/FirstGearGames/FishNet.git?path=Assets/FishNet#73f30cf2425dc808a4f463f0a233d386010810b3",
     "com.unity.test-framework": "1.6.0",
     "com.unity.modules.imgui": "1.0.0",
