@@ -17,11 +17,11 @@
       "hash": "73f30cf2425dc808a4f463f0a233d386010810b3"
     },
     "com.octopus.shared": {
-      "version": "https://github.com/OctOpus-projecct/OctOpus-backend.git?path=/Packages/com.octopus.shared#a9dbc6af81b45890a7e01e366b6ac1716e2cee23",
+      "version": "https://github.com/OctOpus-projecct/OctOpus-backend.git?path=/Packages/com.octopus.shared#b72ed5fe7b6a6743847265cf868705aac746be1a",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "a9dbc6af81b45890a7e01e366b6ac1716e2cee23"
+      "hash": "b72ed5fe7b6a6743847265cf868705aac746be1a"
     },
     "com.unity.ext.nunit": {
       "version": "2.0.5",

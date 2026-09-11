@@ -56,6 +56,8 @@ public sealed class ClientBootstrap : MonoBehaviour
             Connect();
         if (Environment.GetCommandLineArgs().Any(argument => argument == "-octopus-map-test" || argument == "-octopus-map-partner"))
             gameObject.AddComponent<MapTestHarness>();
+        if (Environment.GetCommandLineArgs().Any(argument => argument == "-octopus-inventory-test" || argument == "-octopus-inventory-observer"))
+            gameObject.AddComponent<InventoryTestHarness>();
     }
 
     public void Connect()
@@ -217,6 +219,7 @@ public sealed class ClientBootstrap : MonoBehaviour
         GUILayout.Label("Click ground: cancel work and move.");
         GUILayout.Label("Selection is local; work state is from server.");
         NetworkPlayer owner = players.FirstOrDefault(player => player.IsOwner);
+        DrawInventory(owner);
         GUILayout.Label("Your activity: " + (owner == null ? "-" : owner.Activity.ToString()));
         GUILayout.Label("Last server result: " + (owner == null ? "-" : owner.LastWorkResult.ToString()));
         GUILayout.Label(owner == null ? "Stamina: -" : string.Format(CultureInfo.InvariantCulture,
@@ -237,7 +240,7 @@ public sealed class ClientBootstrap : MonoBehaviour
                 "Tree depleted - returns in {0:F1}s", selectedTree.RespawnRemaining));
         }
         GUILayout.Label("Press " + strikeInput.Key + " once per strike; wait when stamina is low.");
-        GUILayout.Label("HP 0: tree returns after 10s. Wood rewards come later.");
+        GUILayout.Label("HP 0: server grants wood once to the worker; tree returns after 10s.");
         GUILayout.Label("Positions confirmed by server:");
         foreach (NetworkPlayer player in players)
         {
@@ -248,6 +251,34 @@ public sealed class ClientBootstrap : MonoBehaviour
         GUILayout.EndScrollView();
         GUILayout.EndArea();
         uiHasKeyboardFocus = GUIUtility.keyboardControl != 0;
+    }
+
+    private void DrawInventory(NetworkPlayer owner)
+    {
+        GUILayout.Label("Your inventory | Server confirmed");
+        GUILayout.Label("Session only: inventory resets on disconnect.");
+        if (state == LocalConnectionState.Stopped || state == LocalConnectionState.Stopping)
+        {
+            GUILayout.Label("Inventory: not connected");
+            return;
+        }
+        if (state != LocalConnectionState.Started || owner == null || owner.Inventory.CapacityUnits <= 0)
+        {
+            GUILayout.Label("Inventory: waiting for server...");
+            return;
+        }
+
+        InventorySnapshot inventory = owner.Inventory;
+        GUILayout.Label("Wood: " + inventory.WoodCount.ToString(CultureInfo.InvariantCulture));
+        GUILayout.Label(string.Format(CultureInfo.InvariantCulture, "Weight: {0:0.###} / {1:0.###}",
+            (decimal)inventory.WeightUnits / InventoryRules.WeightUnitsPerUnit,
+            (decimal)inventory.CapacityUnits / InventoryRules.WeightUnitsPerUnit));
+        GUILayout.Label(inventory.CanGather
+            ? "Gathering: allowed"
+            : "Gathering: blocked (weight at least 95%)");
+        GUILayout.Label(inventory.IsOverweight
+            ? "Movement: slowed (weight over 100%)"
+            : "Movement: normal speed");
     }
 
     private void OnDestroy()
