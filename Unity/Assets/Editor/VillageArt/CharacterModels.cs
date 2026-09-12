@@ -11,41 +11,45 @@ public static class CharacterModels
         var b=new ArtMesh(villager?"Villager":"Player");var root=b.Root.transform;
         float width=villager?1.30f:1;
         var body=b.Group("Body",root,Vector3.zero);
-        b.SoftBox("Tunic",body,new Vector3(0,.91f,0),new Vector3(.67f*width,.76f,.40f),villager?new Color(.58f,.27f,.15f):VillageColors.Sage);
-        b.SoftBox("Tunic hem",body,new Vector3(0,.65f,0),new Vector3(.63f*width,.18f,.38f),villager?VillageColors.Tan:VillageColors.Sage);
-        b.SoftBox("Leather belt",body,new Vector3(0,.77f,.01f),new Vector3(.66f*width,.092f,.41f),VillageColors.Wood);
-        b.SoftBox("Buckle gold",body,new Vector3(0,.77f,.229f),new Vector3(.14f,.12f,.035f),VillageColors.Gold);
-        b.SoftBox("Buckle inset",body,new Vector3(0,.77f,.252f),new Vector3(.087f,.066f,.015f),VillageColors.Wood);
-        b.Cylinder("Neck",body,new Vector3(0,1.30f,0),new Vector3(.19f,.20f,.19f),VillageColors.Skin,1);
-        // Cream collar flaps and tiny wooden buttons provide an authored silhouette from above.
-        for(int s=-1;s<=1;s+=2)
+        Color cloth=villager?new Color(.58f,.27f,.15f):VillageColors.Sage;
+        CharacterSurface.Form(b,"Tailored tunic",body,new[]{
+            new Vector4(.55f,.29f*width,.185f,0),new Vector4(.59f,.33f*width,.22f,0),
+            new Vector4(.74f,.30f*width,.22f,0),new Vector4(.87f,.29f*width,.22f,0),
+            new Vector4(1.03f,.32f*width,.235f,0),new Vector4(1.15f,.30f*width,.205f,0),
+            new Vector4(1.23f,.19f*width,.15f,0),new Vector4(1.25f,.095f,.095f,0)},cloth);
+        CharacterSurface.Form(b,"Fitted belt",body,new[]{new Vector4(.74f,.303f*width,.228f,0),new Vector4(.78f,.30f*width,.232f,0),new Vector4(.82f,.296f*width,.228f,0)},VillageColors.Wood);
+        b.SoftBox("Buckle gold",body,new Vector3(0,.78f,.245f),new Vector3(.115f,.095f,.028f),VillageColors.Gold);
+        b.SoftBox("Buckle inset",body,new Vector3(0,.78f,.263f),new Vector3(.074f,.056f,.009f),VillageColors.Wood);
+        b.Ball("Neck",body,new Vector3(0,1.27f,0),new Vector3(.20f,.24f,.20f),VillageColors.Skin);
+        for(int sign=-1;sign<=1;sign+=2)
         {
-            var collar=b.Ball("Collar",body,new Vector3(s*.088f,1.205f,.17f),new Vector3(.13f,.20f,.04f),VillageColors.Cream);
-            collar.transform.localRotation=Quaternion.Euler(0,0,s*25);
+            var collar=b.Ball("Folded collar",body,new Vector3(sign*.09f,1.205f,.15f),new Vector3(.12f,.14f,.055f),VillageColors.Cream);
+            collar.transform.localRotation=Quaternion.Euler(-25,0,sign*28);
         }
-        for(int i=0;i<3;i++)b.Ball("Tunic button",body,new Vector3(0,1.13f-i*.1f,.205f),Vector3.one*.035f,VillageColors.Gold);
+        for(int i=0;i<3;i++)b.Ball("Tunic button",body,new Vector3(0,1.10f-i*.105f,.232f),Vector3.one*.03f,VillageColors.Gold);
         foreach(int s in new[]{-1,1})
         {
             var leg=b.Group(s<0?"LegL":"LegR",body,new Vector3(s*.18f,.61f,0));
-            b.SoftBox("Trousers",leg,new Vector3(0,-.19f,0),new Vector3(.25f,.43f,.26f),VillageColors.DarkGreen);
-            b.SoftBox("Boot cuff",leg,new Vector3(0,-.34f,0),new Vector3(.29f,.13f,.30f),VillageColors.Wood);
-            b.SoftBox("Boot",leg,new Vector3(0,-.49f,.065f),new Vector3(.30f,.27f,.43f),VillageColors.Wood);
-            b.SoftBox("Sole",leg,new Vector3(0,-.588f,.065f),new Vector3(.29f,.035f,.40f),new Color(.22f,.15f,.10f));
-            var arm=b.Group(s<0?"ArmL":"ArmR",body,new Vector3(s*.36f*width,1.16f,0));
-            arm.localRotation=Quaternion.Euler(0,0,s*11);
-            b.Ball("Cream sleeve",arm,new Vector3(0,-.185f,0),new Vector3(.24f,.40f,.27f),VillageColors.Cream);
-            b.Cylinder("Sleeve cuff",arm,new Vector3(0,-.34f,0),new Vector3(.25f,.10f,.25f),new Color(.98f,.91f,.74f),1);
-            b.Ball("Forearm",arm,new Vector3(0,-.415f,0),new Vector3(.19f,.20f,.20f),VillageColors.Skin);
-            var hand=b.Group("Hand",arm,new Vector3(0,-.49f,.01f));
-            b.Ball("Palm",hand,Vector3.zero,new Vector3(.21f,.22f,.19f),VillageColors.Skin);
-            b.Ball("Thumb",hand,new Vector3(-s*.08f,.005f,.055f),new Vector3(.09f,.13f,.1f),VillageColors.Skin);
+            CharacterSurface.Form(b,"Soft trousers",leg,new[]{new Vector4(-.38f,.09f,.09f,0),new Vector4(-.28f,.12f,.12f,0),new Vector4(-.12f,.125f,.125f,0),new Vector4(.04f,.13f,.13f,0)},VillageColors.DarkGreen);
+            CharacterSurface.Form(b,"Round leather boot",leg,new[]{new Vector4(-.596f,.105f,.16f,.065f),new Vector4(-.565f,.145f,.205f,.07f),new Vector4(-.50f,.147f,.21f,.07f),new Vector4(-.44f,.13f,.16f,.035f),new Vector4(-.37f,.112f,.12f,0),new Vector4(-.265f,.128f,.128f,0)},VillageColors.Wood);
+            CharacterSurface.Form(b,"Boot folded rim",leg,new[]{new Vector4(-.30f,.126f,.126f,0),new Vector4(-.272f,.14f,.14f,0),new Vector4(-.25f,.126f,.126f,0)},new Color(.34f,.215f,.125f));
+            CharacterSurface.Form(b,"Leather sole",leg,new[]{new Vector4(-.609f,.10f,.15f,.07f),new Vector4(-.596f,.143f,.203f,.07f),new Vector4(-.579f,.145f,.205f,.07f)},new Color(.23f,.15f,.095f));
+            var arm=b.Group(s<0?"ArmL":"ArmR",body,new Vector3(s*.29f*width,1.16f,0));
+            arm.localRotation=Quaternion.Euler(0,0,s*14);
+            CharacterSurface.Form(b,"Cloth sleeve",arm,new[]{new Vector4(-.30f,.092f,.10f,0),new Vector4(-.23f,.125f,.13f,0),new Vector4(-.10f,.14f,.145f,0),new Vector4(.015f,.10f,.11f,0),new Vector4(.05f,.035f,.045f,0)},villager?cloth:VillageColors.Cream);
+            CharacterSurface.Form(b,"Rolled sleeve",arm,new[]{new Vector4(-.32f,.103f,.113f,0),new Vector4(-.28f,.133f,.14f,0),new Vector4(-.25f,.113f,.123f,0)},VillageColors.Cream);
+            CharacterSurface.Form(b,"Rounded forearm",arm,new[]{new Vector4(-.47f,.074f,.08f,.012f),new Vector4(-.39f,.098f,.10f,.005f),new Vector4(-.285f,.093f,.095f,0)},VillageColors.Skin);
+            var hand=b.Group("Hand",arm,new Vector3(0,-.47f,.015f));
+            b.Ball("Palm",hand,new Vector3(0,-.035f,0),new Vector3(.20f,.23f,.17f),VillageColors.Skin);
+            for(int finger=0;finger<3;finger++)b.Ball("Curled finger",hand,new Vector3((finger-1)*.048f,-.107f,.014f),new Vector3(.066f,.085f,.115f),VillageColors.Skin);
+            b.Ball("Thumb",hand,new Vector3(-s*.075f,-.018f,.055f),new Vector3(.09f,.13f,.10f),VillageColors.Skin);
             if(!villager && s==1)
             {
                 var tool=b.Group("HeldAxe",hand,new Vector3(.04f,-.08f,.09f));
                 tool.localRotation=Quaternion.Euler(-16,0,-7);tool.localScale=Vector3.one*.78f;MakeAxe(b,tool);
             }
         }
-        var head=b.Group("Head",body,new Vector3(0,1.62f,0));head.localScale=Vector3.one*1.10f;
+        var head=b.Group("Head",body,new Vector3(0,1.60f,0));head.localScale=Vector3.one*1.18f;
         b.Ball("Face",head,Vector3.zero,new Vector3(.79f,.73f,.70f),VillageColors.Skin);
         foreach(int s in new[]{-1,1})
         {
@@ -55,14 +59,10 @@ public static class CharacterModels
             b.Ball("Eye highlight",head,new Vector3(s*.145f-.013f,.038f,.348f),Vector3.one*.017f,VillageColors.Cream);
             var brow=b.Ball("Eyebrow",head,new Vector3(s*.146f,.118f,.326f),new Vector3(.117f,.038f,.025f),VillageColors.Hair);
             brow.transform.localRotation=Quaternion.Euler(0,0,-s*8);
-            b.Ball("Cheek",head,new Vector3(s*.233f,-.087f,.296f),new Vector3(.097f,.048f,.014f),new Color(.91f,.48f,.34f));
+            b.Ball("Cheek",head,new Vector3(s*.233f,-.087f,.276f),new Vector3(.097f,.048f,.014f),new Color(.91f,.48f,.34f));
         }
         b.Ball("Nose",head,new Vector3(0,-.065f,.365f),new Vector3(.10f,.075f,.07f),VillageColors.Skin);
-        for(int i=0;i<7;i++)
-        {
-            float x=(i-3)*.016f;
-            b.Ball("Smile",head,new Vector3(x,-.166f+Mathf.Abs(x)*.45f,.306f),Vector3.one*.018f,new Color(.35f,.19f,.11f));
-        }
+        SculptedParts.Curve(b,"Gentle smile",head,new Vector3(-.063f,-.145f,.326f),new Vector3(0,-.193f,.324f),new Vector3(.063f,-.145f,.326f),.0055f,.0055f,new Color(.35f,.19f,.11f));
         b.Ball("Hair cap",head,new Vector3(0,.17f,-.08f),new Vector3(.82f,.64f,.74f),VillageColors.Hair);
         for(int i=0;i<8;i++)
         {
@@ -70,16 +70,21 @@ public static class CharacterModels
             var start=new Vector3(.04f,.42f,-.08f);
             var mid=new Vector3(Mathf.Sin(a)*.39f,.37f,Mathf.Cos(a)*.35f-.07f);
             var tip=new Vector3(Mathf.Sin(a)*.36f,.035f,Mathf.Cos(a)*.32f-.07f);
-            SculptedParts.Curve(b,"Swept hair",head,start,mid,tip,.115f,.035f,new Color(.29f+(i%2)*.018f,.17f,.10f));
+            SculptedParts.Curve(b,"Swept hair",head,start,mid,tip,.025f,.025f,new Color(.29f+(i%2)*.018f,.17f,.10f),20,.085f);
         }
-        for(int i=0;i<3;i++)
-            SculptedParts.Curve(b,"Soft fringe",head,new Vector3(.13f+i*.07f,.37f,.20f),new Vector3(-.20f+i*.16f,.34f,.43f),new Vector3(-.27f+i*.18f,.10f,.32f),.115f,.025f,new Color(.32f,.19f,.11f));
+        for(int i=0;i<5;i++)
+        {
+            float x=-.29f+i*.14f;
+            SculptedParts.Curve(b,"Soft fringe",head,new Vector3(x+.07f,.33f,.21f),new Vector3(x+.035f,.33f,.355f),new Vector3(x-.035f,.10f+(i%2)*.065f,.30f),.022f,.008f,new Color(.31f+(i%2)*.02f,.18f,.105f),20,.070f);
+        }
+        SculptedParts.Curve(b,"Tousled crown",head,new Vector3(-.12f,.36f,-.09f),new Vector3(.03f,.53f,-.03f),new Vector3(.23f,.44f,.035f),.025f,.014f,new Color(.32f,.19f,.11f),20,.075f);
         if(villager)
         {
-            b.SoftBox("Work apron",body,new Vector3(0,.92f,.218f),new Vector3(.54f,.71f,.065f),new Color(.37f,.27f,.14f));
-            b.SoftBox("Apron pocket",body,new Vector3(0,1.03f,.263f),new Vector3(.22f,.16f,.025f),VillageColors.Tan);
-            foreach(int s in new[]{-1,1})b.Beam("Apron shoulder strap",body,new Vector3(s*.21f,1.27f,.13f),new Vector3(s*.21f,1.10f,.26f),.05f,VillageColors.Tan);
-            b.Ball("Rounded beard",head,new Vector3(0,-.245f,.16f),new Vector3(.64f,.35f,.43f),new Color(.28f,.20f,.145f));
+            CharacterSurface.Form(b,"Draped leather apron",body,new[]{new Vector4(.55f,.37f,.233f,.006f),new Vector4(.60f,.40f,.245f,.006f),new Vector4(.75f,.38f,.246f,.006f),new Vector4(.9f,.36f,.25f,.006f),new Vector4(1.05f,.30f,.248f,.006f),new Vector4(1.14f,.25f,.21f,.006f)},new Color(.40f,.29f,.16f),.95f);
+            CharacterSurface.Form(b,"Apron pocket",body,new[]{new Vector4(.91f,.34f,.26f,.014f),new Vector4(.99f,.34f,.26f,.014f),new Vector4(1.055f,.34f,.26f,.014f)},VillageColors.Tan,.32f);
+            foreach(int sign in new[]{-1,1})
+                SculptedParts.Curve(b,"Apron shoulder strap",body,new Vector3(sign*.21f,1.08f,.215f),new Vector3(sign*.23f,1.32f,.14f),new Vector3(sign*.23f,1.15f,-.17f),.028f,.028f,VillageColors.Tan);
+            CharacterSurface.Form(b,"Sculpted beard",head,new[]{new Vector4(-.40f,.025f,.045f,.12f),new Vector4(-.35f,.18f,.16f,.12f),new Vector4(-.26f,.29f,.205f,.09f),new Vector4(-.18f,.30f,.18f,.085f)},new Color(.29f,.21f,.15f));
             foreach(int s in new[]{-1,1})b.Ball("Moustache",head,new Vector3(s*.075f,-.096f,.382f),new Vector3(.19f,.09f,.065f),new Color(.34f,.25f,.17f));
         }
         else MakeBackpack(b,body,new Vector3(0,1.0f,-.30f));

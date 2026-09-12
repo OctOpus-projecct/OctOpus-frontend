@@ -4,7 +4,7 @@ using UnityEngine;
 public static class SculptedParts
 {
     // A continuous swept surface with tapered ends, shared vertices and smooth normals.
-    public static GameObject Curve(ArtMesh art,string name,Transform parent,Vector3 a,Vector3 control,Vector3 end,float startRadius,float endRadius,Color color,int rings=20)
+    public static GameObject Curve(ArtMesh art,string name,Transform parent,Vector3 a,Vector3 control,Vector3 end,float startRadius,float endRadius,Color color,int rings=20,float bulge=0)
     {
         const int sides=16;
         var vertices=new List<Vector3>();var triangles=new List<int>();
@@ -18,7 +18,7 @@ public static class SculptedParts
             if(side.sqrMagnitude<.01f)side=Vector3.Cross(tangent,Vector3.forward).normalized;
             previousSide=side;
             var normal=Vector3.Cross(side,tangent).normalized;
-            float radius=Mathf.Lerp(startRadius,endRadius,t);
+            float radius=Mathf.Lerp(startRadius,endRadius,t)+Mathf.Sin(t*Mathf.PI)*bulge;
             for(int j=0;j<sides;j++)
             {
                 float angle=j*Mathf.PI*2/sides;

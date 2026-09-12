@@ -66,8 +66,10 @@ public static class VillageArtBuilder
         camera.orthographic=true;camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=new Color(.91f,.89f,.82f);
         camera.nearClipPlane=.01f;camera.farClipPlane=100;
         var sheet=new Texture2D(1600,1200,TextureFormat.RGB24,false);
+        var portraits=new Texture2D(1600,800,TextureFormat.RGB24,false);
         for(int i=0;i<Names.Length;i++)
         {
+            light.transform.rotation=Quaternion.Euler(40,(Names[i]=="Cottage" || Names[i]=="Workshop" || Names[i]=="Backpack")?-35:145,0);
             var model=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("Village/"+Names[i]));
             var bounds=BoundsOf(model);
             camera.aspect=1;
@@ -84,12 +86,19 @@ public static class VillageArtBuilder
             floor.transform.position=new Vector3(0,bounds.min.y-.012f,0);floor.transform.localScale=Vector3.one*20;
             var floorMaterial=new Material(Shader.Find("Standard"));floorMaterial.color=new Color(.64f,.61f,.54f);floorMaterial.SetFloat("_Glossiness",0);
             floor.GetComponent<Renderer>().sharedMaterial=floorMaterial;floor.GetComponent<Renderer>().shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;
+            if(i<2)
+            {
+                var portrait=Render(camera,800,800);
+                portraits.SetPixels(i*800,0,800,800,portrait.GetPixels());
+                UnityEngine.Object.DestroyImmediate(portrait);
+            }
             var image=Render(camera,400,400);
             UnityEngine.Object.DestroyImmediate(floor);UnityEngine.Object.DestroyImmediate(floorMaterial);
             File.WriteAllBytes(Path.Combine(output,Names[i]+".png"),image.EncodeToPNG());
             sheet.SetPixels((i%4)*400,(2-i/4)*400,400,400,image.GetPixels());
             UnityEngine.Object.DestroyImmediate(image);UnityEngine.Object.DestroyImmediate(model);
         }
+        portraits.Apply();File.WriteAllBytes(Path.Combine(output,"characters.png"),portraits.EncodeToPNG());UnityEngine.Object.DestroyImmediate(portraits);
         sheet.Apply();File.WriteAllBytes(Path.Combine(output,"models.png"),sheet.EncodeToPNG());
         UnityEngine.Object.DestroyImmediate(sheet);
         var map=new GameObject("Village");
