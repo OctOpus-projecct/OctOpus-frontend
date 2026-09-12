@@ -101,6 +101,7 @@ public static class VillageArtBuilder
         portraits.Apply();File.WriteAllBytes(Path.Combine(output,"characters.png"),portraits.EncodeToPNG());UnityEngine.Object.DestroyImmediate(portraits);
         sheet.Apply();File.WriteAllBytes(Path.Combine(output,"models.png"),sheet.EncodeToPNG());
         UnityEngine.Object.DestroyImmediate(sheet);
+        RenderGripPoses(output,camera,light);
         var map=new GameObject("Village");
         var ground=GameObject.CreatePrimitive(PrimitiveType.Plane);ground.transform.localScale=Vector3.one*2.4f;
         map.AddComponent<PrototypeMapView>().EnsureBuilt(ground,camera);
@@ -112,6 +113,20 @@ public static class VillageArtBuilder
         File.WriteAllBytes(Path.Combine(output,"village.png"),world.EncodeToPNG());
         UnityEngine.Object.DestroyImmediate(world);
         Debug.Log("[OctOpus] Actual mesh previews: "+output);
+    }
+    private static void RenderGripPoses(string output,Camera camera,Light light)
+    {
+        var model=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("Village/Player"));
+        var arm=model.transform.Find("Body/ArmR");var grip=arm.Find("Hand/GripAxis");
+        var image=new Texture2D(1500,500,TextureFormat.RGB24,false);
+        camera.aspect=1;camera.orthographicSize=.30f;light.transform.rotation=Quaternion.Euler(40,145,0);
+        for(int i=0;i<3;i++)
+        {
+            arm.localRotation=Quaternion.Euler(-i*55,0,11);
+            camera.transform.position=grip.position+new Vector3(1,.25f,1).normalized*3;camera.transform.LookAt(grip.position);
+            var frame=Render(camera,500,500);image.SetPixels(i*500,0,500,500,frame.GetPixels());UnityEngine.Object.DestroyImmediate(frame);
+        }
+        image.Apply();File.WriteAllBytes(Path.Combine(output,"axe-grip.png"),image.EncodeToPNG());UnityEngine.Object.DestroyImmediate(image);UnityEngine.Object.DestroyImmediate(model);
     }
     private static Texture2D Render(Camera camera,int width,int height)
     {

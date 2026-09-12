@@ -38,46 +38,26 @@ public static class CharacterModels
             arm.localRotation=Quaternion.Euler(0,0,s*14);
             CharacterSurface.Form(b,"Cloth sleeve",arm,new[]{new Vector4(-.30f,.092f,.10f,0),new Vector4(-.23f,.125f,.13f,0),new Vector4(-.10f,.14f,.145f,0),new Vector4(.015f,.10f,.11f,0),new Vector4(.05f,.035f,.045f,0)},villager?cloth:VillageColors.Cream);
             CharacterSurface.Form(b,"Rolled sleeve",arm,new[]{new Vector4(-.32f,.103f,.113f,0),new Vector4(-.28f,.133f,.14f,0),new Vector4(-.25f,.113f,.123f,0)},VillageColors.Cream);
-            CharacterSurface.Form(b,"Rounded forearm",arm,new[]{new Vector4(-.47f,.074f,.08f,.012f),new Vector4(-.39f,.098f,.10f,.005f),new Vector4(-.285f,.093f,.095f,0)},VillageColors.Skin);
             var hand=b.Group("Hand",arm,new Vector3(0,-.47f,.015f));
-            b.Ball("Palm",hand,new Vector3(0,-.035f,0),new Vector3(.20f,.23f,.17f),VillageColors.Skin);
-            for(int finger=0;finger<3;finger++)b.Ball("Curled finger",hand,new Vector3((finger-1)*.048f,-.107f,.014f),new Vector3(.066f,.085f,.115f),VillageColors.Skin);
-            b.Ball("Thumb",hand,new Vector3(-s*.075f,-.018f,.055f),new Vector3(.09f,.13f,.10f),VillageColors.Skin);
+            CharacterSculpt.Hand(b,hand,!villager && s==1,s);
             if(!villager && s==1)
             {
-                var tool=b.Group("HeldAxe",hand,new Vector3(.04f,-.08f,.09f));
-                tool.localRotation=Quaternion.Euler(-16,0,-7);tool.localScale=Vector3.one*.78f;MakeAxe(b,tool);
+                var tool=b.Group("HeldAxe",hand,CharacterSculpt.GripCenter-CharacterSculpt.ToolRotation*(Vector3.up*CharacterSculpt.ToolGripY*CharacterSculpt.ToolScale));
+                tool.localRotation=CharacterSculpt.ToolRotation;tool.localScale=Vector3.one*CharacterSculpt.ToolScale;MakeAxe(b,tool);
+                var grip=b.Group("GripAxis",hand,CharacterSculpt.GripCenter);grip.localRotation=CharacterSculpt.ToolRotation;
             }
         }
         var head=b.Group("Head",body,new Vector3(0,1.60f,0));head.localScale=Vector3.one*1.18f;
-        b.Ball("Face",head,Vector3.zero,new Vector3(.79f,.73f,.70f),VillageColors.Skin);
+        CharacterSculpt.Face(b,head);
         foreach(int s in new[]{-1,1})
         {
-            b.Ball("Ear",head,new Vector3(s*.375f,-.02f,0),new Vector3(.145f,.21f,.13f),VillageColors.Skin);
-            b.Ball("Ear inner",head,new Vector3(s*.407f,-.025f,.043f),new Vector3(.075f,.12f,.035f),new Color(.82f,.48f,.33f));
-            b.Ball("Eye",head,new Vector3(s*.145f,.015f,.331f),new Vector3(.075f,.102f,.03f),new Color(.12f,.095f,.055f));
-            b.Ball("Eye highlight",head,new Vector3(s*.145f-.013f,.038f,.348f),Vector3.one*.017f,VillageColors.Cream);
-            var brow=b.Ball("Eyebrow",head,new Vector3(s*.146f,.118f,.326f),new Vector3(.117f,.038f,.025f),VillageColors.Hair);
+            b.Ball("Eye",head,new Vector3(s*.145f,.015f,.314f),new Vector3(.075f,.102f,.03f),new Color(.12f,.095f,.055f));
+            b.Ball("Eye highlight",head,new Vector3(s*.145f-.013f,.038f,.330f),Vector3.one*.017f,VillageColors.Cream);
+            var brow=b.Ball("Eyebrow",head,new Vector3(s*.146f,.118f,.300f),new Vector3(.117f,.038f,.025f),VillageColors.Hair);
             brow.transform.localRotation=Quaternion.Euler(0,0,-s*8);
-            b.Ball("Cheek",head,new Vector3(s*.233f,-.087f,.276f),new Vector3(.097f,.048f,.014f),new Color(.91f,.48f,.34f));
         }
-        b.Ball("Nose",head,new Vector3(0,-.065f,.365f),new Vector3(.10f,.075f,.07f),VillageColors.Skin);
         SculptedParts.Curve(b,"Gentle smile",head,new Vector3(-.063f,-.145f,.326f),new Vector3(0,-.193f,.324f),new Vector3(.063f,-.145f,.326f),.0055f,.0055f,new Color(.35f,.19f,.11f));
-        b.Ball("Hair cap",head,new Vector3(0,.17f,-.08f),new Vector3(.82f,.64f,.74f),VillageColors.Hair);
-        for(int i=0;i<8;i++)
-        {
-            float a=i*Mathf.PI*2/8;
-            var start=new Vector3(.04f,.42f,-.08f);
-            var mid=new Vector3(Mathf.Sin(a)*.39f,.37f,Mathf.Cos(a)*.35f-.07f);
-            var tip=new Vector3(Mathf.Sin(a)*.36f,.035f,Mathf.Cos(a)*.32f-.07f);
-            SculptedParts.Curve(b,"Swept hair",head,start,mid,tip,.025f,.025f,new Color(.29f+(i%2)*.018f,.17f,.10f),20,.085f);
-        }
-        for(int i=0;i<5;i++)
-        {
-            float x=-.29f+i*.14f;
-            SculptedParts.Curve(b,"Soft fringe",head,new Vector3(x+.07f,.33f,.21f),new Vector3(x+.035f,.33f,.355f),new Vector3(x-.035f,.10f+(i%2)*.065f,.30f),.022f,.008f,new Color(.31f+(i%2)*.02f,.18f,.105f),20,.070f);
-        }
-        SculptedParts.Curve(b,"Tousled crown",head,new Vector3(-.12f,.36f,-.09f),new Vector3(.03f,.53f,-.03f),new Vector3(.23f,.44f,.035f),.025f,.014f,new Color(.32f,.19f,.11f),20,.075f);
+        CharacterSculpt.Hair(b,head);
         if(villager)
         {
             CharacterSurface.Form(b,"Draped leather apron",body,new[]{new Vector4(.55f,.37f,.233f,.006f),new Vector4(.60f,.40f,.245f,.006f),new Vector4(.75f,.38f,.246f,.006f),new Vector4(.9f,.36f,.25f,.006f),new Vector4(1.05f,.30f,.248f,.006f),new Vector4(1.14f,.25f,.21f,.006f)},new Color(.40f,.29f,.16f),.95f);
@@ -109,7 +89,7 @@ public static class CharacterModels
     public static void MakeAxe(ArtMesh b,Transform root)
     {
         b.Cylinder("Wood handle",root,new Vector3(0,.27f,0),new Vector3(.065f,.76f,.065f),VillageColors.Wood,1);
-        for(int i=0;i<5;i++){var wrap=b.Cylinder("Green grip wrap",root,new Vector3(0,.19f+i*.03f,0),new Vector3(.079f,.034f,.079f),VillageColors.Sage,1);wrap.transform.localRotation=Quaternion.Euler(0,0,i%2==0?8:-8);}
+        for(int i=0;i<5;i++){var wrap=b.Cylinder("Green grip wrap",root,new Vector3(0,.045f+i*.025f,0),new Vector3(.079f,.034f,.079f),VillageColors.Sage,1);wrap.transform.localRotation=Quaternion.Euler(0,0,i%2==0?8:-8);}
         b.Extrude("Forged axe blade",root,new Vector3(0,.60f,0),new[]{new Vector2(-.07f,-.075f),new Vector2(.24f,-.19f),new Vector2(.29f,.12f),new Vector2(.04f,.16f),new Vector2(-.07f,.085f)},.065f,VillageColors.Steel);
         b.Extrude("Cutting edge",root,new Vector3(0,.60f,0),new[]{new Vector2(.24f,-.19f),new Vector2(.275f,-.18f),new Vector2(.32f,.12f),new Vector2(.29f,.12f)},.068f,new Color(.72f,.77f,.73f));
     }
