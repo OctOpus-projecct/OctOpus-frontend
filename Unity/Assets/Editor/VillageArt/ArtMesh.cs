@@ -114,7 +114,7 @@ public sealed class ArtMesh
 
 public static class VillageColors
 {
-    public static readonly Color Skin=new Color(.93f,.66f,.45f),Hair=new Color(.25f,.13f,.075f),
+    public static readonly Color Skin=new Color(.94f,.72f,.55f),Hair=new Color(.25f,.13f,.075f),
         Cream=new Color(.92f,.85f,.66f),Sage=new Color(.39f,.49f,.24f),DarkGreen=new Color(.22f,.29f,.15f),
         Wood=new Color(.43f,.25f,.12f),Tan=new Color(.64f,.43f,.23f),Gold=new Color(.75f,.58f,.28f),
         Steel=new Color(.51f,.57f,.59f),Leaf=new Color(.43f,.61f,.27f),LightLeaf=new Color(.61f,.73f,.34f),

@@ -101,6 +101,7 @@ public static class VillageArtBuilder
         portraits.Apply();File.WriteAllBytes(Path.Combine(output,"characters.png"),portraits.EncodeToPNG());UnityEngine.Object.DestroyImmediate(portraits);
         sheet.Apply();File.WriteAllBytes(Path.Combine(output,"models.png"),sheet.EncodeToPNG());
         UnityEngine.Object.DestroyImmediate(sheet);
+        RenderFaces(output,camera,light);
         RenderGripPoses(output,camera,light);
         var map=new GameObject("Village");
         var ground=GameObject.CreatePrimitive(PrimitiveType.Plane);ground.transform.localScale=Vector3.one*2.4f;
@@ -113,6 +114,19 @@ public static class VillageArtBuilder
         File.WriteAllBytes(Path.Combine(output,"village.png"),world.EncodeToPNG());
         UnityEngine.Object.DestroyImmediate(world);
         Debug.Log("[OctOpus] Actual mesh previews: "+output);
+    }
+    private static void RenderFaces(string output,Camera camera,Light light)
+    {
+        var image=new Texture2D(1600,800,TextureFormat.RGB24,false);
+        camera.aspect=1;camera.orthographicSize=.68f;light.transform.rotation=Quaternion.Euler(35,155,0);
+        for(int i=0;i<2;i++)
+        {
+            var model=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("Village/"+(i==0?"Player":"Villager")));
+            var center=model.transform.Find("Body/Head").position+Vector3.up*.07f;
+            camera.transform.position=center+new Vector3(.25f,.10f,1).normalized*5;camera.transform.LookAt(center);
+            var frame=Render(camera,800,800);image.SetPixels(i*800,0,800,800,frame.GetPixels());UnityEngine.Object.DestroyImmediate(frame);UnityEngine.Object.DestroyImmediate(model);
+        }
+        image.Apply();File.WriteAllBytes(Path.Combine(output,"faces.png"),image.EncodeToPNG());UnityEngine.Object.DestroyImmediate(image);
     }
     private static void RenderGripPoses(string output,Camera camera,Light light)
     {

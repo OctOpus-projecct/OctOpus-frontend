@@ -51,12 +51,12 @@ public static class CharacterModels
         CharacterSculpt.Face(b,head);
         foreach(int s in new[]{-1,1})
         {
-            b.Ball("Eye",head,new Vector3(s*.145f,.015f,.314f),new Vector3(.075f,.102f,.03f),new Color(.12f,.095f,.055f));
-            b.Ball("Eye highlight",head,new Vector3(s*.145f-.013f,.038f,.330f),Vector3.one*.017f,VillageColors.Cream);
-            var brow=b.Ball("Eyebrow",head,new Vector3(s*.146f,.118f,.300f),new Vector3(.117f,.038f,.025f),VillageColors.Hair);
-            brow.transform.localRotation=Quaternion.Euler(0,0,-s*8);
+            b.Ball("Eye",head,new Vector3(s*.125f,.005f,.296f),new Vector3(.072f,.112f,.027f),new Color(.12f,.095f,.055f));
+            b.Ball("Eye highlight",head,new Vector3(s*.125f-.012f,.032f,.311f),Vector3.one*.017f,VillageColors.Cream);
+            var brow=b.Ball("Eyebrow",head,new Vector3(s*.125f,.113f,.282f),new Vector3(.090f,.026f,.017f),VillageColors.Hair);
+            brow.transform.localRotation=Quaternion.Euler(0,0,-s*5);
         }
-        SculptedParts.Curve(b,"Gentle smile",head,new Vector3(-.063f,-.145f,.326f),new Vector3(0,-.193f,.324f),new Vector3(.063f,-.145f,.326f),.0055f,.0055f,new Color(.35f,.19f,.11f));
+        SculptedParts.Curve(b,"Gentle smile",head,new Vector3(-.052f,-.135f,.286f),new Vector3(0,-.167f,.289f),new Vector3(.052f,-.135f,.286f),.004f,.004f,new Color(.35f,.19f,.11f));
         CharacterSculpt.Hair(b,head);
         if(villager)
         {
@@ -65,7 +65,8 @@ public static class CharacterModels
             foreach(int sign in new[]{-1,1})
                 SculptedParts.Curve(b,"Apron shoulder strap",body,new Vector3(sign*.21f,1.08f,.215f),new Vector3(sign*.23f,1.32f,.14f),new Vector3(sign*.23f,1.15f,-.17f),.028f,.028f,VillageColors.Tan);
             CharacterSurface.Form(b,"Sculpted beard",head,new[]{new Vector4(-.40f,.025f,.045f,.12f),new Vector4(-.35f,.18f,.16f,.12f),new Vector4(-.26f,.29f,.205f,.09f),new Vector4(-.18f,.30f,.18f,.085f)},new Color(.29f,.21f,.15f));
-            foreach(int s in new[]{-1,1})b.Ball("Moustache",head,new Vector3(s*.075f,-.096f,.382f),new Vector3(.19f,.09f,.065f),new Color(.34f,.25f,.17f));
+            foreach(int s in new[]{-1,1})
+                SculptedParts.Curve(b,"Tapered moustache",head,new Vector3(s*.018f,-.096f,.304f),new Vector3(s*.10f,-.085f,.310f),new Vector3(s*.155f,-.132f,.265f),.019f,.005f,new Color(.34f,.25f,.17f),20,.009f);
         }
         else MakeBackpack(b,body,new Vector3(0,1.0f,-.30f));
         return b;
