@@ -61,7 +61,7 @@ public static class VillageArtBuilder
         RenderSettings.ambientMode=UnityEngine.Rendering.AmbientMode.Flat;
         RenderSettings.ambientLight=new Color(.65f,.63f,.58f);
         var light=new GameObject("Preview sunlight").AddComponent<Light>();
-        light.type=LightType.Directional;light.intensity=1.1f;light.transform.rotation=Quaternion.Euler(45,-35,0);
+        light.type=LightType.Directional;light.shadows=LightShadows.Soft;light.shadowStrength=.4f;light.intensity=.9f;light.transform.rotation=Quaternion.Euler(45,-35,0);
         var camera=new GameObject("Preview camera").AddComponent<Camera>();
         camera.orthographic=true;camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=new Color(.91f,.89f,.82f);
         camera.nearClipPlane=.01f;camera.farClipPlane=100;
@@ -80,7 +80,12 @@ public static class VillageArtBuilder
                 fit=Mathf.Max(fit,Mathf.Abs(corner.x),Mathf.Abs(corner.y));
             }
             camera.orthographicSize=fit*1.12f;
+            var floor=GameObject.CreatePrimitive(PrimitiveType.Plane);
+            floor.transform.position=new Vector3(0,bounds.min.y-.012f,0);floor.transform.localScale=Vector3.one*20;
+            var floorMaterial=new Material(Shader.Find("Standard"));floorMaterial.color=new Color(.64f,.61f,.54f);floorMaterial.SetFloat("_Glossiness",0);
+            floor.GetComponent<Renderer>().sharedMaterial=floorMaterial;floor.GetComponent<Renderer>().shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;
             var image=Render(camera,400,400);
+            UnityEngine.Object.DestroyImmediate(floor);UnityEngine.Object.DestroyImmediate(floorMaterial);
             File.WriteAllBytes(Path.Combine(output,Names[i]+".png"),image.EncodeToPNG());
             sheet.SetPixels((i%4)*400,(2-i/4)*400,400,400,image.GetPixels());
             UnityEngine.Object.DestroyImmediate(image);UnityEngine.Object.DestroyImmediate(model);

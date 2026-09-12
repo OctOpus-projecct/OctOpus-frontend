@@ -10,22 +10,21 @@ public static class EnvironmentModels
     {
         var a = new ArtMesh("Tree"); var p = a.Root.transform;
         a.Cylinder("TaperedTrunk", p, V(0, .86f, 0), V(.68f, 1.72f, .64f), VillageColors.Wood, .64f, 9);
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 7; i++)
         {
-            float angle = i * Mathf.PI / 3;
-            var root = a.Extrude("FlaredRoot" + i, p, Vector3.zero,
-                new[] { new Vector2(.11f, 0), new Vector2(.61f, .025f), new Vector2(.25f, .62f) }, .19f, Shade(VillageColors.Wood, 1 + i * .035f));
-            root.transform.localRotation = Quaternion.Euler(0, angle * Mathf.Rad2Deg, 0);
+            float angle=i*Mathf.PI*2/7;
+            var outward=new Vector3(Mathf.Cos(angle),0,Mathf.Sin(angle));
+            SculptedParts.Curve(a,"Flowing root "+i,p,outward*.12f+Vector3.up*.66f,outward*.22f+Vector3.up*.10f,outward*.65f+Vector3.up*.025f,.16f,.025f,VillageColors.Wood);
         }
         a.Beam("LeftBranch", p, V(-.06f, .92f, 0), V(-.65f, 2.14f, .02f), .29f, VillageColors.Wood);
         a.Beam("RightBranch", p, V(.05f, 1.05f, 0), V(.65f, 2.27f, .12f), .26f, VillageColors.Wood);
         a.Beam("BackBranch", p, V(0, 1.15f, .03f), V(.05f, 2.24f, .62f), .23f, VillageColors.Tan);
         var canopy = a.Group("Canopy", p, Vector3.zero);
         a.Ball("Crown", canopy, V(-.08f, 2.95f, .08f), V(1.43f, 1.3f, 1.38f), VillageColors.LightLeaf, true);
-        a.Ball("LeftCrown", canopy, V(-.71f, 2.43f, .04f), V(1.28f, 1.37f, 1.23f), VillageColors.DarkLeaf, true);
+        a.Ball("LeftCrown", canopy, V(-.71f, 2.43f, .04f), V(1.28f, 1.37f, 1.23f), Shade(VillageColors.Leaf,.88f), true);
         a.Ball("RightCrown", canopy, V(.68f, 2.5f, .1f), V(1.22f, 1.23f, 1.28f), VillageColors.Leaf, true);
         a.Ball("FrontCrown", canopy, V(-.23f, 2.23f, -.54f), V(1.25f, 1.24f, 1.17f), VillageColors.LightLeaf, true);
-        a.Ball("LowRightCrown", canopy, V(.57f, 2.04f, .4f), V(1.18f, 1.06f, 1.23f), VillageColors.DarkLeaf, true);
+        a.Ball("LowRightCrown", canopy, V(.57f, 2.04f, .4f), V(1.18f, 1.06f, 1.23f), Shade(VillageColors.Leaf,.88f), true);
         a.Ball("RearCrown", canopy, V(-.37f, 2.41f, .66f), V(1.27f, 1.19f, 1.13f), VillageColors.Leaf, true);
         Grass(a, p, V(-.47f, 0, -.28f), .7f);
         Grass(a, p, V(.43f, 0, .12f), .55f);
@@ -36,11 +35,11 @@ public static class EnvironmentModels
     {
         var a = new ArtMesh("Stump"); var p = a.Root.transform;
         a.Cylinder("Bark", p, V(0, .165f, 0), V(.7f, .33f, .7f), VillageColors.Wood, .84f, 11);
-        for (int i = 0; i < 5; i++)
+        for(int i=0;i<7;i++)
         {
-            var root = a.Extrude("Root" + i, p, Vector3.zero,
-                new[] { new Vector2(.15f, 0), new Vector2(.49f, .015f), new Vector2(.27f, .27f) }, .15f, Shade(VillageColors.Wood, 1 + .05f * i));
-            root.transform.localRotation = Quaternion.Euler(0, i * 72, 0);
+            float angle=i*Mathf.PI*2/7;
+            var outward=new Vector3(Mathf.Cos(angle),0,Mathf.Sin(angle));
+            SculptedParts.Curve(a,"Stump root "+i,p,outward*.20f+Vector3.up*.25f,outward*.29f+Vector3.up*.08f,outward*.49f+Vector3.up*.018f,.11f,.018f,VillageColors.Wood);
         }
         Rings(a, p, V(0, .337f, 0), .56f, Quaternion.identity);
         Grass(a, p, V(.35f, 0, .23f), .42f);
@@ -207,7 +206,7 @@ public static class EnvironmentModels
     {
         var g = a.Group("CutGrowthRings", p, position); g.localRotation = rotation;
         for (int i = 0; i < 6; i++)
-            a.Cylinder("GrowthRing" + i, g, V(0, i * .0015f, 0), V(diameter * (1 - i * .15f), .004f, diameter * (1 - i * .15f)), i % 2 == 0 ? VillageColors.Cream : VillageColors.Tan, 1, 16);
+            a.Cylinder("GrowthRing" + i, g, V(0, i * .0015f, 0), V(diameter * (1 - i * .15f), .004f, diameter * (1 - i * .15f)), i % 2 == 0 ? new Color(.72f,.51f,.30f) : new Color(.61f,.39f,.21f), 1, 16);
     }
 
     private static void Log(ArtMesh a, Transform p, Vector3 position, float length, float diameter, int index)

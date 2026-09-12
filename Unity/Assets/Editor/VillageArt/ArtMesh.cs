@@ -23,9 +23,50 @@ public sealed class ArtMesh
         o.AddComponent<MeshFilter>().sharedMesh=mesh;o.AddComponent<MeshRenderer>().sharedMaterial=Material(color);return o;
     }
     public GameObject Ball(string name,Transform parent,Vector3 position,Vector3 scale,Color color,bool flat=false)
-        =>Part(name,parent,position,scale,Shape(flat?10:20,flat?6:14,1,flat),color);
+        =>Part(name,parent,position,scale,flat?FacetedStone():Shape(28,20,1,false),color);
     public GameObject Box(string name,Transform parent,Vector3 position,Vector3 scale,Color color)
-        =>Part(name,parent,position,scale,Shape(16,12,.22f,false),color);
+        =>Part(name,parent,position,scale,RoundedBox(),color);
+    public GameObject SoftBox(string name,Transform parent,Vector3 position,Vector3 scale,Color color)
+        =>Part(name,parent,position,scale,Shape(28,20,.55f,false),color);
+    private Mesh FacetedStone()
+    {
+        const string key="organic_icosphere";if(meshes.TryGetValue(key,out var existing))return existing;
+        float h=(1+Mathf.Sqrt(5))/2;
+        var v=new List<Vector3>{new Vector3(-1,h,0),new Vector3(1,h,0),new Vector3(-1,-h,0),new Vector3(1,-h,0),new Vector3(0,-1,h),new Vector3(0,1,h),new Vector3(0,-1,-h),new Vector3(0,1,-h),new Vector3(h,0,-1),new Vector3(h,0,1),new Vector3(-h,0,-1),new Vector3(-h,0,1)};
+        int[] faces={0,11,5,0,5,1,0,1,7,0,7,10,0,10,11,1,5,9,5,11,4,11,10,2,10,7,6,7,1,8,3,9,4,3,4,2,3,2,6,3,6,8,3,8,9,4,9,5,2,4,11,6,2,10,8,6,7,9,8,1};
+        for(int i=0;i<v.Count;i++)v[i]=v[i].normalized*.5f;
+        var t=new List<int>();
+        for(int i=0;i<faces.Length;i+=3)
+        {
+            int a=faces[i],b=faces[i+1],c=faces[i+2];
+            int ab=v.Count;v.Add((v[a]+v[b]).normalized*.5f);
+            int bc=v.Count;v.Add((v[b]+v[c]).normalized*.5f);
+            int ca=v.Count;v.Add((v[c]+v[a]).normalized*.5f);
+            t.AddRange(new[]{a,ab,ca,b,bc,ab,c,ca,bc,ab,bc,ca});
+        }
+        return Finish(key,v,t,true);
+    }
+    private Mesh RoundedBox()
+    {
+        const string key="beveled_box";
+        if(meshes.TryGetValue(key,out var existing))return existing;
+        var vertices=new List<Vector3>();var triangles=new List<int>();var normals=new List<Vector3>();
+        const int steps=10;const float radius=.12f;
+        foreach(var axis in new[]{Vector3.right,Vector3.left,Vector3.up,Vector3.down,Vector3.forward,Vector3.back})
+        {
+            var u=Vector3.Cross(axis,Mathf.Abs(axis.y)>.5f?Vector3.forward:Vector3.up);
+            var v=Vector3.Cross(axis,u);int offset=vertices.Count;
+            for(int y=0;y<=steps;y++)for(int x=0;x<=steps;x++)
+            {
+                var point=axis*.5f+u*((float)x/steps-.5f)+v*((float)y/steps-.5f);
+                var core=new Vector3(Mathf.Clamp(point.x,-.5f+radius,.5f-radius),Mathf.Clamp(point.y,-.5f+radius,.5f-radius),Mathf.Clamp(point.z,-.5f+radius,.5f-radius));
+                var normal=(point-core).normalized;vertices.Add(core+normal*radius);normals.Add(normal);
+            }
+            for(int y=0;y<steps;y++)for(int x=0;x<steps;x++)
+            {int a=offset+y*(steps+1)+x,b=a+steps+1;triangles.AddRange(new[]{a,a+1,b,b,a+1,b+1});}
+        }
+        var mesh=Finish(key,vertices,triangles,false);mesh.SetNormals(normals);return mesh;
+    }
     private static float Power(float x,float p)=>Mathf.Sign(x)*Mathf.Pow(Mathf.Abs(x),p);
     private Mesh Shape(int sides,int rings,float power,bool flat)
     {
