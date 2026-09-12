@@ -15,6 +15,7 @@ public sealed class PrototypeMapView : MonoBehaviour
     private Vector3 originalGroundScale;
     private Material originalGroundMaterial;
     private Camera mapCamera;
+    private Bounds sceneryBounds;
     private Vector3 originalCameraPosition;
     private Quaternion originalCameraRotation;
     private Rect originalCameraRect;
@@ -29,11 +30,10 @@ public sealed class PrototypeMapView : MonoBehaviour
         if (root != null) return;
         root = new GameObject("Prototype Map Scenery");
         root.transform.SetParent(transform, false);
-        var grass = MakeMaterial(new Color(.34f, .43f, .35f));
+        var grass = MakeMaterial(new Color(.48f, .59f, .35f));
         var path = MakeMaterial(new Color(.66f, .65f, .51f));
         var clearing = MakeMaterial(new Color(.49f, .58f, .48f));
         var accent = MakeMaterial(new Color(.36f, .67f, .66f));
-        var guide = MakeMaterial(new Color(.82f, .64f, .36f));
         var edge = MakeMaterial(new Color(.24f, .32f, .28f));
         if (groundObject != null)
         {
@@ -66,10 +66,12 @@ public sealed class PrototypeMapView : MonoBehaviour
             new Vector3(1.1f, .015f, 1.1f), accent);
         Primitive("Guide base", PrimitiveType.Cylinder, WorldLayout.GuidePosition + Vector3.up * .055f,
             new Vector3(1.8f, .025f, 1.8f), clearing);
-        Primitive("Guide placeholder", PrimitiveType.Capsule, WorldLayout.GuidePosition + Vector3.up,
-            new Vector3(.65f, 1, .65f), guide);
-        Label("SPAWN", WorldLayout.SpawnCenter + Vector3.up * .35f);
-        Label("GUIDE\nplaceholder", WorldLayout.GuidePosition + Vector3.up * 2.8f);
+        BuildVillage(groundObject, grass);
+
+
+        sceneryBounds = new Bounds(new Vector3(0, 1.8f, 0), new Vector3(extent * 2, 3.6f, extent * 2));
+        foreach (Renderer sceneryRenderer in root.GetComponentsInChildren<Renderer>())
+            sceneryBounds.Encapsulate(sceneryRenderer.bounds);
         mapCamera = camera;
         if (mapCamera != null)
         {
@@ -87,28 +89,68 @@ public sealed class PrototypeMapView : MonoBehaviour
 
     public void FrameCamera(int width, int height)
     {
-        if (mapCamera == null) return;
-        float left = Mathf.Min(MovementInput.PanelRect.xMax + 20, width * .45f);
-        mapCamera.rect = new Rect(left / width, 0, 1 - left / width, 1);
-        mapCamera.transform.SetPositionAndRotation(new Vector3(18, 26, -25), Quaternion.identity);
-        mapCamera.transform.LookAt(Vector3.zero);
+        if (mapCamera == null || width <= 0 || height <= 0) return;
+        mapCamera.rect = new Rect(0, 0, 1, 1);
+        Vector3 center = sceneryBounds.center;
+        mapCamera.transform.SetPositionAndRotation(center + new Vector3(18, 26, -25), Quaternion.identity);
+        mapCamera.transform.LookAt(center);
         mapCamera.orthographic = true;
         mapCamera.clearFlags = CameraClearFlags.SolidColor;
-        mapCamera.backgroundColor = new Color(.12f, .17f, .19f);
-        float aspect = (width - left) / height;
+        mapCamera.backgroundColor = new Color(.73f, .77f, .66f);
+        float aspect = (float)width / height;
         mapCamera.aspect = aspect;
         float size = 0;
+        Quaternion inverseRotation = Quaternion.Inverse(mapCamera.transform.rotation);
         for (int x = -1; x <= 1; x += 2)
+        for (int y = -1; y <= 1; y += 2)
         for (int z = -1; z <= 1; z += 2)
         {
-            Vector3 corner = Quaternion.Inverse(mapCamera.transform.rotation) *
-                new Vector3(x * WorldLayout.HalfExtent, 0, z * WorldLayout.HalfExtent);
+            Vector3 corner = inverseRotation * Vector3.Scale(sceneryBounds.extents, new Vector3(x, y, z));
             size = Mathf.Max(size, Mathf.Abs(corner.y), Mathf.Abs(corner.x) / aspect);
         }
         mapCamera.orthographicSize = size + 1;
         foreach (Transform label in labels) label.rotation = mapCamera.transform.rotation;
     }
 
+    private void BuildVillage(GameObject groundObject, Material grass)
+    {
+        Decoration("Villager", "Guide villager", WorldLayout.GuidePosition, 0);
+        Decoration("Cottage", "Village cottage", new Vector3(-14, 0, 5), -90);
+        Decoration("Workshop", "Village workshop", new Vector3(-14, 0, -2), -90);
+        Decoration("Lantern", "Village lantern", new Vector3(-10.7f, 0, -3.4f), 0);
+        Decoration("Lantern", "Path lantern", new Vector3(-6.1f, 0, 2.9f), 45);
+        Decoration("Signpost", "Village signpost", new Vector3(-8.6f, 0, -2.8f), -20);
+        Decoration("Wood", "Workshop wood", new Vector3(-12.9f, 0, -.45f), 90);
+        Vector3[] details =
+        {
+            new Vector3(-10.8f, 0, 5.7f), new Vector3(-10.6f, 0, -6.3f),
+            new Vector3(-2.3f, 0, -7.7f), new Vector3(5.5f, 0, -9.8f),
+            new Vector3(10.4f, 0, 3.1f), new Vector3(5.3f, 0, 10.6f),
+            new Vector3(-7.8f, 0, 10.4f), new Vector3(-14.8f, 0, 7)
+        };
+        for (int i = 0; i < details.Length; i++) Decoration("Details", "Forest details " + i, details[i], i * 73);
+
+        // The village apron is visual only. The shared ground collider and playable extent stay unchanged.
+        MeshFilter source = groundObject == null ? null : groundObject.GetComponent<MeshFilter>();
+        if (source != null)
+        {
+            var apron = new GameObject("Village lawn apron");
+            apron.transform.SetParent(root.transform, false);
+            apron.transform.position = new Vector3(-14.3f, -.035f, 1.5f);
+            apron.transform.localScale = new Vector3(.53f, 1, 1.24f);
+            apron.AddComponent<MeshFilter>().sharedMesh = source.sharedMesh;
+            apron.AddComponent<MeshRenderer>().sharedMaterial = grass;
+        }
+    }
+
+    private void Decoration(string resource, string name, Vector3 position, float yaw)
+    {
+        GameObject prefab = Resources.Load<GameObject>("Village/" + resource);
+        if (prefab == null) return;
+        GameObject item = Instantiate(prefab, root.transform);
+        item.name = name;
+        item.transform.SetPositionAndRotation(position, Quaternion.Euler(0, yaw, 0));
+    }
     private void LateUpdate() { FrameCamera(Screen.width, Screen.height); }
 
     private void Path(Vector3 start, Vector3 end, Material material)

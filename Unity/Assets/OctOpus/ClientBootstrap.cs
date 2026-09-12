@@ -36,18 +36,18 @@ public sealed partial class ClientBootstrap : MonoBehaviour
     private bool uiHasKeyboardFocus;
     private bool clearGuiFocus;
     private Collider ground;
-    private MaterialPropertyBlock playerColor;
+
     private float nextPositionLog;
     private Vector2 panelScroll;
     private NetworkTree selectedTree;
     private static readonly string[] ButtonNames = { "Left", "Right", "Middle" };
-    private static readonly int ColorId = Shader.PropertyToID("_Color");
+
 
     private void Awake()
     {
         movementInput = new MovementInput();
         strikeInput = new StrikeInput();
-        playerColor = new MaterialPropertyBlock();
+
     }
 
     private void Start()
@@ -193,27 +193,9 @@ public sealed partial class ClientBootstrap : MonoBehaviour
         players = FindObjectsByType<NetworkPlayer>(FindObjectsSortMode.None)
             .OrderBy(player => player.OwnerId).ToArray();
         foreach (NetworkPlayer player in players)
-        {
-            if (player.GetComponent<AxeSwingView>() == null) player.gameObject.AddComponent<AxeSwingView>();
-            var renderer = player.GetComponent<Renderer>();
-            if (renderer == null) continue;
-            renderer.GetPropertyBlock(playerColor);
-            playerColor.SetColor(ColorId, player.IsOwner
-                ? new Color(0.2f, 0.85f, 0.6f) : new Color(0.85f, 0.6f, 0.25f));
-            renderer.SetPropertyBlock(playerColor);
-        }
+            if (player.GetComponent<CharacterModelView>() == null) player.gameObject.AddComponent<CharacterModelView>();
         foreach (NetworkTree renderedTree in FindObjectsByType<NetworkTree>(FindObjectsSortMode.None))
-        {
-            foreach (var renderer in renderedTree.GetComponentsInChildren<Renderer>())
-            {
-                renderer.enabled = !renderedTree.IsDepleted;
-                renderer.GetPropertyBlock(playerColor);
-                playerColor.SetColor(ColorId, renderer.name == "Trunk" ? new Color(.4f, .25f, .12f) :
-                    renderedTree.WorkerId < 0 ? new Color(.2f, .6f, .25f) : new Color(.7f, .6f, .15f));
-                renderer.SetPropertyBlock(playerColor);
-            }
-            foreach (var collider in renderedTree.GetComponentsInChildren<Collider>()) collider.enabled = !renderedTree.IsDepleted;
-        }
+            if (renderedTree.GetComponent<TreeModelView>() == null) renderedTree.gameObject.AddComponent<TreeModelView>();
         var owner = players.FirstOrDefault(player => player.IsOwner);
         if (owner != null && owner.Activity == PlayerActivity.Working && Input.GetKeyDown(strikeInput.Key) &&
             strikeInput.CanStrike(Application.isFocused, Time.frameCount, uiHasKeyboardFocus, rebindingStrike) &&
