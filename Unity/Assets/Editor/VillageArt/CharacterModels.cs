@@ -69,6 +69,7 @@ public static class CharacterModels
                 SculptedParts.Curve(b,"Tapered moustache",head,new Vector3(s*.018f,-.096f,.304f),new Vector3(s*.10f,-.085f,.310f),new Vector3(s*.155f,-.132f,.265f),.019f,.005f,new Color(.34f,.25f,.17f),20,.009f);
         }
         else MakeBackpack(b,body,new Vector3(0,1.0f,-.30f));
+        HairLocks.Build(b,head);
         return b;
     }
     private static void MakeBackpack(ArtMesh b,Transform parent,Vector3 pos)

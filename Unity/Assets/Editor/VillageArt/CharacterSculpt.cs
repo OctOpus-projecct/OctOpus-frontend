@@ -22,34 +22,42 @@ public static class CharacterSculpt
     public static void Hair(ArtMesh art,Transform parent)=>HairSurface.Build(art,parent);
     public static void Hand(ArtMesh art,Transform parent,bool gripping,int side)
     {
-        var s=new OrganicSculpt(.012f);
-        s.Ellipsoid(new Vector3(0,.08f,0),new Vector3(.082f,.145f,.08f));
-        s.Ellipsoid(new Vector3(0,-.035f,-.008f),new Vector3(.079f,.080f,.053f));
+        var s=new OrganicSculpt(.009f);
+        s.Ellipsoid(new Vector3(0,.08f,0),new Vector3(.069f,.145f,.067f));
+        s.Ellipsoid(new Vector3(0,-.035f,-.008f),new Vector3(.070f,.074f,.049f));
         if(gripping)
         {
             Vector3 axis=ToolRotation*Vector3.up,radial=Vector3.forward,across=Vector3.Cross(axis,radial).normalized;
-            for(int finger=0;finger<3;finger++)
+            // Short phalanges bend around the shaft; the tips stop at the palm side.
+            for(int finger=0;finger<4;finger++)
             {
-                var center=GripCenter+axis*((finger-1)*.044f);
-                Vector3 previous=center-radial*.05f;
-                for(int j=1;j<=12;j++)
+                var center=GripCenter+axis*((finger-1.5f)*.032f);
+                float thickness=finger==3?.0145f:.018f;
+                Vector3 previous=center+(across*Mathf.Cos(-1.8f)+radial*Mathf.Sin(-1.8f))*.052f;
+                for(int j=1;j<=10;j++)
                 {
-                    float angle=Mathf.Lerp(-Mathf.PI/2,Mathf.PI*1.05f,j/12f);
-                    var next=center+(across*Mathf.Cos(angle)+radial*Mathf.Sin(angle))*.055f;
-                    s.Capsule(previous,next,.020f,.020f);previous=next;
+                    float t=j/10f,angle=Mathf.Lerp(-1.8f,1.85f,t);
+                    var next=center+(across*Mathf.Cos(angle)+radial*Mathf.Sin(angle))*.052f;
+                    s.Capsule(previous,next,thickness,Mathf.Lerp(thickness,.012f,t*t));previous=next;
                 }
             }
-            s.Capsule(new Vector3(-.065f,-.035f,-.004f),GripCenter+axis*.067f+Vector3.forward*.023f,.031f,.025f);
+            // Thumb crosses the index finger, instead of ending inside the shaft channel.
+            var thumbBase=GripCenter+axis*-.067f-radial*.033f-across*.024f;
+            var thumbJoint=GripCenter+axis*-.063f+radial*.039f-across*.031f;
+            var thumbTip=GripCenter+axis*-.036f+radial*.060f;
+            s.Capsule(new Vector3(-.047f,-.02f,-.006f),thumbBase,.029f,.026f);
+            s.Capsule(thumbBase,thumbJoint,.026f,.023f);
+            s.Capsule(thumbJoint,thumbTip,.023f,.018f);
             s.Exclusion=p=>Vector3.ProjectOnPlane(p-GripCenter,axis).magnitude-GripClearance;
         }
         else
         {
             for(int finger=0;finger<4;finger++)
             {
-                float x=(finger-1.5f)*.033f;
-                s.Capsule(new Vector3(x,-.07f,-.007f),new Vector3(x,-.12f+(Mathf.Abs(finger-1.5f)*.013f),.012f),.021f,.018f);
+                float x=(finger-1.5f)*.030f;
+                s.Capsule(new Vector3(x,-.07f,-.007f),new Vector3(x,-.137f+(Mathf.Abs(finger-1.5f)*.018f),.020f),.017f,.014f);
             }
-            s.Capsule(new Vector3(-side*.061f,-.022f,.005f),new Vector3(-side*.077f,-.073f,.04f),.029f,.023f);
+            s.Capsule(new Vector3(-side*.052f,-.022f,.005f),new Vector3(-side*.071f,-.069f,.035f),.024f,.018f);
         }
         s.Bake(art,gripping?"Sculpted gripping hand":"Sculpted relaxed hand",parent,new Bounds(new Vector3(0,.025f,0),new Vector3(.35f,.48f,.32f)),.0055f,VillageColors.Skin);
     }

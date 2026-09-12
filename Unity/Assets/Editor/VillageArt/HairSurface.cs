@@ -11,12 +11,12 @@ public static class HairSurface
         for(int layer=0;layer<2;layer++)
         {
             float inset=layer==0?0:.022f;int start=vertices.Count;
-            vertices.Add(new Vector3(.025f,.51f-inset,-.035f));colors.Add(new Color(.34f,.20f,.12f));
+            vertices.Add(new Vector3( .025f,.47f-inset,-.035f));colors.Add(new Color(.34f,.20f,.12f));
             for(int row=1;row<=rows;row++)for(int col=0;col<columns;col++)
             {
                 float phi=col*Mathf.PI*2/columns;float signed=Mathf.DeltaAngle(0,phi*Mathf.Rad2Deg)*Mathf.Deg2Rad;
                 float front=Mathf.Pow(Mathf.Max(0,Mathf.Cos(phi)),1.5f);
-                float edge=2.12f-front*1.03f;
+                float edge=2.12f-front*1.20f;
                 // Unequal, diagonal points in the fringe leave a visible side part.
                 edge+=front*(Peak(signed,-.48f,.19f)*.26f+Peak(signed,.12f,.19f)*.20f+Peak(signed,.58f,.16f)*.13f);
                 float theta=edge*row/rows;
@@ -24,9 +24,9 @@ public static class HairSurface
                 float flow=7*(phi+.45f*Mathf.Cos(theta))+.18f*Mathf.Sin(phi*3);
                 float ridge=Mathf.Pow(Mathf.Max(0,Mathf.Cos(flow)),4);
                 float ripple=(.014f*ridge-.006f)*Mathf.Sin(theta)*Mathf.Sin(theta);
-                float x=(.405f-inset+ripple)*Mathf.Sin(theta)*Mathf.Sin(sweep);
-                float y=.11f+(.40f-inset+ripple)*Mathf.Cos(theta);
-                float z=-.035f+(.385f-inset+ripple)*Mathf.Sin(theta)*Mathf.Cos(sweep);
+                float x=(.377f-inset+ripple)*Mathf.Sin(theta)*Mathf.Sin(sweep);
+                float y=.11f+(.36f-inset+ripple)*Mathf.Cos(theta);
+                float z=-.035f+(.350f-inset+ripple)*Mathf.Sin(theta)*Mathf.Cos(sweep);
                 vertices.Add(new Vector3(x,y,z));
                 float shade=.96f+.08f*ridge+.035f*Mathf.Cos(phi-1);
                 colors.Add(new Color(.34f*shade,.20f*shade,.115f*shade));

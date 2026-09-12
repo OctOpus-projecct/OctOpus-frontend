@@ -11,7 +11,20 @@ public class CharacterGripTests
     {
         var part=Resources.Load<GameObject>("Village/Player").transform.Find(path);
         Assert.That(part,Is.Not.Null,path);
-        var mesh=part.GetComponent<MeshFilter>().sharedMesh;
+        AssertClosedSurface(part.GetComponent<MeshFilter>().sharedMesh);
+    }
+    [TestCase("Player")]
+    [TestCase("Villager")]
+    public void HairLocksHaveClosedOutwardSurfaces(string model)
+    {
+        var hair=Resources.Load<GameObject>("Village/"+model).transform.Find("Body/Head/Layered hair locks");
+        Assert.That(hair,Is.Not.Null);
+        var meshes=hair.GetComponentsInChildren<MeshFilter>();
+        Assert.That(meshes.Length,Is.GreaterThan(0));
+        foreach(var part in meshes)AssertClosedSurface(part.sharedMesh);
+    }
+    private static void AssertClosedSurface(Mesh mesh)
+    {
         var points=mesh.vertices;var faces=mesh.triangles;
         var balance=new Dictionary<ulong,int>();var uses=new Dictionary<ulong,int>();double volume=0;
         for(int i=0;i<faces.Length;i+=3)
