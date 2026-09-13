@@ -66,8 +66,8 @@ public static class ReferenceGarments
     }
     public static void Hat(ArtMesh art,Transform head)
     {
-        var hat=art.Group("Wide brim hat",head,new Vector3(0,.02f,-.015f));
-        hat.localRotation=Quaternion.Euler(-7,0,-7);
+        var hat=art.Group("Wide brim hat",head,new Vector3(0,-.07f,-.015f));
+        hat.localRotation=Quaternion.Euler(-3,0,-4);
         Color felt=new Color(.095f,.080f,.11f),band=new Color(.40f,.12f,.085f);
         Patch(art,"Curved felt brim",hat,(t,u)=>{
             float a=u*Mathf.PI*2,r=Mathf.Lerp(.28f,.66f,t);

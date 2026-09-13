@@ -34,7 +34,7 @@ public static class ReferenceAdventurer
         for(int i=0;i<3;i++)SculptedParts.Curve(art,"Scarf layered fold",body,new Vector3(-.23f,1.25f+i*.025f,.095f),new Vector3(0,1.10f+i*.047f,.30f),new Vector3(.23f,1.26f+i*.02f,.09f),.012f,.007f,Scarf*(.72f+i*.12f));
         ReferenceGarments.Patch(art,"Scarf tail",body,(t,u)=>new Vector3(-.17f-t*.16f+(u-.5f)*(.12f-t*.035f),1.25f-t*.28f,-.20f-.08f*Mathf.Sin(t*Mathf.PI)),Vector3.back*.014f,Scarf,20,8);
         var head=art.Group("Head",body,new Vector3(0,1.61f,0));head.localScale=Vector3.one*1.14f;
-        Face(art,head);HairStyle(art,head);ReferenceGarments.Hat(art,head);
+        Face(art,head);HairStyle(art,head);ReferenceGarments.Hat(art,head);SeatHairUnderHat(head);
         return art;
     }
     private static void Leg(ArtMesh art,Transform body,int side)
@@ -84,6 +84,26 @@ public static class ReferenceAdventurer
         });
         var material=new Material(Shader.Find("OctOpus/Adventurer Face")){name="Adventurer skin",color=Color.white};art.Assets.Add(material);face.GetComponent<Renderer>().sharedMaterial=material;
     }
+    private static void SeatHairUnderHat(Transform head)
+    {
+        var hat=head.Find("Wide brim hat");
+        foreach(var part in head.GetComponentsInChildren<MeshFilter>())
+        {
+            if(part.transform.name!="Continuous sculpted hair" && !part.transform.IsChildOf(head.Find("Layered hair locks")))continue;
+            var mesh=part.sharedMesh;var vertices=mesh.vertices;
+            for(int i=0;i<vertices.Length;i++)
+            {
+                var p=hat.InverseTransformPoint(part.transform.TransformPoint(vertices[i]));
+                float radius=Mathf.Sqrt(p.x*p.x/(.34f*.34f)+p.z*p.z/(.29f*.29f));
+                if(radius<=.96f)continue;
+                float underside=.402f-.035f*Mathf.Max(0,p.z/.56f);
+                if(p.y<=underside)continue;
+                p.y=Mathf.Lerp(p.y,underside,Mathf.SmoothStep(0,1,(radius-.96f)/.05f));
+                vertices[i]=part.transform.InverseTransformPoint(hat.TransformPoint(p));
+            }
+            mesh.vertices=vertices;mesh.RecalculateNormals();mesh.RecalculateBounds();
+        }
+    }
     private static void HairStyle(ArtMesh art,Transform head)
     {
         HairSurface.Build(art,head);
@@ -94,14 +114,16 @@ public static class ReferenceAdventurer
         {
             float angle=.90f+i*(Mathf.PI*2-1.8f)/11;
             var radial=new Vector3(Mathf.Sin(angle),0,Mathf.Cos(angle));var tangent=new Vector3(Mathf.Cos(angle),0,-Mathf.Sin(angle));
-            HairLocks.Lock(art,root,"Upper hair layer",new Vector3(.02f,.44f,-.04f),radial*.28f+Vector3.up*.43f,radial*.38f+Vector3.up*.17f+tangent*.085f,.086f,.030f,i,Hair);
-            HairLocks.Lock(art,root,"Swept side hair",radial*.20f+Vector3.up*.32f,radial*.405f+Vector3.up*.24f,radial*.445f+Vector3.up*.055f+tangent*.12f,.082f,.033f,i,Hair);
-            HairLocks.Lock(art,root,"Fine side tip",radial*.27f+Vector3.up*.16f,radial*.385f+Vector3.up*.10f,radial*.42f-Vector3.up*.018f+tangent*.12f,.049f,.024f,i+1,Hair);
+            float variation=.012f*Mathf.Sin(i*2.4f);
+            HairLocks.Lock(art,root,"Upper hair layer",new Vector3(.02f,.42f,-.04f),radial*.30f+Vector3.up*.40f,radial*.36f+Vector3.up*(.13f+variation)+tangent*.05f,.084f,.028f,i,Hair,radial*.39f+Vector3.up*.24f+tangent*.09f);
+            HairLocks.Lock(art,root,"Swept side hair",radial*.22f+Vector3.up*.29f,radial*.42f+Vector3.up*.25f,radial*.36f+Vector3.up*(.018f+variation)+tangent*.085f,.076f,.027f,i,Hair,radial*.43f+Vector3.up*.055f+tangent*.13f);
+            HairLocks.Lock(art,root,"Fine side tip",radial*.28f+Vector3.up*.13f,radial*.40f+Vector3.up*.10f,radial*.34f-Vector3.up*(.055f-variation)+tangent*.07f,.046f,.020f,i+1,Hair,radial*.415f-Vector3.up*.015f+tangent*.115f);
         }
         for(int side=-1;side<=1;side+=2)for(int i=0;i<4;i++)
         {
-            float offset=i*.038f;
-            HairLocks.Lock(art,root,"Parted sweeping fringe",new Vector3(-.045f+side*offset,.43f-i*.012f,.06f),new Vector3(side*(.18f+offset),.34f-i*.040f,.345f),new Vector3(side*(.31f+offset),.20f-i*.040f,.24f),.057f-i*.004f,.029f,i,Hair);
+            float offset=i*.035f,asymmetry=side<0?.012f:0;
+            HairLocks.Lock(art,root,"Soft parted fringe",new Vector3(-.045f+side*offset,.40f-i*.01f,.06f),new Vector3(side*(.17f+offset),.34f-i*.030f,.35f),new Vector3(side*(.275f+offset*.6f),.14f-i*.028f+asymmetry,.265f),.058f-i*.004f,.024f,i,Hair,new Vector3(side*(.34f+offset*.4f),.20f-i*.023f,.335f));
         }
+        HairLocks.Lock(art,root,"Loose central fringe",new Vector3(-.09f,.405f,.10f),new Vector3(.055f,.345f,.365f),new Vector3(-.03f,.175f,.325f),.065f,.023f,2,Hair,new Vector3(.09f,.24f,.375f));
     }
 }

@@ -27,7 +27,7 @@ public static class HairLocks
         Lock(art,root,"Right temple",new Vector3(.22f,.37f,-.01f),new Vector3(.44f,.27f,.21f),new Vector3(.35f,.015f,.19f),.083f,.035f,0);
         Lock(art,root,"Crown flick",new Vector3(.025f,.44f,-.06f),new Vector3(.035f,.565f,-.11f),new Vector3(.15f,.52f,-.10f),.060f,.032f,3);
     }
-    public static void Lock(ArtMesh art,Transform parent,string name,Vector3 a,Vector3 b,Vector3 c,float width,float depth,int shade,Color? tint=null)
+    public static void Lock(ArtMesh art,Transform parent,string name,Vector3 a,Vector3 b,Vector3 c,float width,float depth,int shade,Color? tint=null,Vector3? tipControl=null)
     {
         const int rows=24,columns=16;
         var v=new List<Vector3>();var triangles=new List<int>();
@@ -37,10 +37,16 @@ public static class HairLocks
             float t=(float)r/rows;
             var center=(1-t)*(1-t)*a+2*t*(1-t)*b+t*t*c;
             var along=(2*(1-t)*(b-a)+2*t*(c-b)).normalized;
+            if(tipControl.HasValue)
+            {
+                var d=tipControl.Value;float u=1-t;
+                center=u*u*u*a+3*u*u*t*b+3*u*t*t*d+t*t*t*c;
+                along=(3*u*u*(b-a)+6*u*t*(d-b)+3*t*t*(c-d)).normalized;
+            }
             var outward=(center-new Vector3(0,.08f,-.035f)).normalized;
             var across=Vector3.Cross(along,outward).normalized;
             outward=Vector3.Cross(across,along).normalized;
-            float profile=Mathf.Pow(Mathf.Sin(Mathf.PI*t),.7f)*(1.12f-.42f*t);
+            float profile=Mathf.Pow(Mathf.Sin(Mathf.PI*t),tipControl.HasValue?.55f:.7f)*(1.12f-.42f*t);
             for(int col=0;col<columns;col++)
             {
                 float angle=col*Mathf.PI*2/columns;
