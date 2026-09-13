@@ -27,7 +27,7 @@ public static class HairLocks
         Lock(art,root,"Right temple",new Vector3(.22f,.37f,-.01f),new Vector3(.44f,.27f,.21f),new Vector3(.35f,.015f,.19f),.083f,.035f,0);
         Lock(art,root,"Crown flick",new Vector3(.025f,.44f,-.06f),new Vector3(.035f,.565f,-.11f),new Vector3(.15f,.52f,-.10f),.060f,.032f,3);
     }
-    private static void Lock(ArtMesh art,Transform parent,string name,Vector3 a,Vector3 b,Vector3 c,float width,float depth,int shade)
+    public static void Lock(ArtMesh art,Transform parent,string name,Vector3 a,Vector3 b,Vector3 c,float width,float depth,int shade,Color? tint=null)
     {
         const int rows=24,columns=16;
         var v=new List<Vector3>();var triangles=new List<int>();
@@ -65,6 +65,6 @@ public static class HairLocks
         if(volume<0)for(int i=0;i<triangles.Count;i+=3)(triangles[i+1],triangles[i+2])=(triangles[i+2],triangles[i+1]);
         var mesh=new Mesh{name=name};mesh.SetVertices(v);mesh.SetTriangles(triangles,0);mesh.RecalculateNormals();mesh.RecalculateBounds();art.Assets.Add(mesh);
         float tone=1+(shade%5-2)*.026f;
-        art.Part(name,parent,Vector3.zero,Vector3.one,mesh,new Color(.32f*tone,.18f*tone,.10f*tone));
+        art.Part(name,parent,Vector3.zero,Vector3.one,mesh,(tint??new Color(.32f,.18f,.10f))*tone);
     }
 }

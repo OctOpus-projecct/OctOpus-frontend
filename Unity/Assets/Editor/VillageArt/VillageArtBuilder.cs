@@ -103,6 +103,7 @@ public static class VillageArtBuilder
         UnityEngine.Object.DestroyImmediate(sheet);
         RenderFaces(output,camera,light);
         RenderGripPoses(output,camera,light);
+        RenderAdventurer(output,camera,light);
         var map=new GameObject("Village");
         var ground=GameObject.CreatePrimitive(PrimitiveType.Plane);ground.transform.localScale=Vector3.one*2.4f;
         map.AddComponent<PrototypeMapView>().EnsureBuilt(ground,camera);
@@ -123,6 +124,8 @@ public static class VillageArtBuilder
         {
             var model=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("Village/"+(i==0?"Player":"Villager")));
             var center=model.transform.Find("Body/Head").position+Vector3.up*.07f;
+            if(i==0){center+=Vector3.up*.18f;camera.orthographicSize=.94f;}
+            else camera.orthographicSize=.68f;
             camera.transform.position=center+new Vector3(.25f,.10f,1).normalized*5;camera.transform.LookAt(center);
             var frame=Render(camera,800,800);image.SetPixels(i*800,0,800,800,frame.GetPixels());UnityEngine.Object.DestroyImmediate(frame);UnityEngine.Object.DestroyImmediate(model);
         }
@@ -141,6 +144,26 @@ public static class VillageArtBuilder
             var frame=Render(camera,500,500);image.SetPixels(i*500,0,500,500,frame.GetPixels());UnityEngine.Object.DestroyImmediate(frame);
         }
         image.Apply();File.WriteAllBytes(Path.Combine(output,"axe-grip.png"),image.EncodeToPNG());UnityEngine.Object.DestroyImmediate(image);UnityEngine.Object.DestroyImmediate(model);
+    }
+    private static void RenderAdventurer(string output,Camera camera,Light light)
+    {
+        var image=new Texture2D(2100,1000,TextureFormat.RGB24,false);
+        var model=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("Village/Player"));
+        var floor=GameObject.CreatePrimitive(PrimitiveType.Plane);
+        var floorMaterial=new Material(Shader.Find("Standard")){color=new Color(.86f,.84f,.77f)};
+        floor.GetComponent<Renderer>().sharedMaterial=floorMaterial;
+        camera.aspect=.7f;camera.orthographicSize=1.44f;
+        var center=new Vector3(0,1.30f,0);
+        for(int i=0;i<3;i++)
+        {
+            float yaw=new[]{0f,45f,180f}[i];
+            model.transform.rotation=Quaternion.Euler(0,yaw,0);
+            light.transform.rotation=Quaternion.Euler(35,145,0);
+            camera.transform.position=center+new Vector3(0,.09f,1).normalized*8;camera.transform.LookAt(center);
+            var frame=Render(camera,700,1000);image.SetPixels(i*700,0,700,1000,frame.GetPixels());UnityEngine.Object.DestroyImmediate(frame);
+        }
+        image.Apply();File.WriteAllBytes(Path.Combine(output,"adventurer.png"),image.EncodeToPNG());
+        UnityEngine.Object.DestroyImmediate(image);UnityEngine.Object.DestroyImmediate(model);UnityEngine.Object.DestroyImmediate(floor);UnityEngine.Object.DestroyImmediate(floorMaterial);
     }
     private static Texture2D Render(Camera camera,int width,int height)
     {

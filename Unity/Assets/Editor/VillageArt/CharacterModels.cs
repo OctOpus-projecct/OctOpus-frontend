@@ -2,7 +2,7 @@ using UnityEngine;
 
 public static class CharacterModels
 {
-    public static ArtMesh Player()=>Person(false);
+    public static ArtMesh Player()=>ReferenceAdventurer.Build();
     public static ArtMesh Villager()=>Person(true);
     public static ArtMesh Axe(){var b=new ArtMesh("Axe");MakeAxe(b,b.Root.transform);return b;}
     public static ArtMesh Backpack(){var b=new ArtMesh("Backpack");MakeBackpack(b,b.Root.transform,Vector3.zero);return b;}

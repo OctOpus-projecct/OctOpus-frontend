@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class CharacterGripTests
 {
+    [TestCase("Body/Open long coat")]
+    [TestCase("Body/Head/Wide brim hat/Curved felt brim")]
     [TestCase("Body/Head/Sculpted face")]
     [TestCase("Body/Head/Continuous sculpted hair")]
     [TestCase("Body/ArmR/Hand/Sculpted gripping hand")]
@@ -51,6 +53,17 @@ public class CharacterGripTests
         }
         var components=new HashSet<int>();foreach(int vertex in used)components.Add(root(vertex));
         Assert.That(components.Count,Is.EqualTo(1),"Separate floating sculpt fragments");
+    }
+    [Test]
+    public void CoatLiningStaysInsideTheOuterShell()
+    {
+        var mesh=Resources.Load<GameObject>("Village/Player").transform.Find("Body/Open long coat").GetComponent<MeshFilter>().sharedMesh;
+        var points=mesh.vertices;int layerSize=points.Length/2;
+        for(int i=0;i<layerSize;i++)
+        {
+            var outward=new Vector3(points[i].x,0,(points[i].z+.005f)/(.86f*.86f)).normalized;
+            Assert.That(Vector3.Dot(points[i+layerSize]-points[i],outward),Is.LessThan(-.005f),"Lining must move inward around the entire coat, including sides and back");
+        }
     }
     [Test]
     public void ShaftHasClearanceInsideGripAndRemainsAnchoredDuringSwing()
