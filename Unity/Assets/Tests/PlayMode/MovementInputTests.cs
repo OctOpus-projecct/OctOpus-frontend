@@ -18,6 +18,16 @@ public class MovementInputTests
         Assert.That(new MovementInput(key).Button, Is.EqualTo(0));
     }
 
+    [Test] public void CozyHudCanReplaceLegacyPanelWithoutBlockingEmptyGround()
+    {
+        var input=new MovementInput(key);
+        var point=new Vector2(40,600-200);
+        Assert.That(input.CanMove(point,600,true,20),Is.False);
+        Assert.That(input.CanMove(point,600,true,20,false),Is.True);
+        input.UpdateFocus(true,20);
+        Assert.That(input.CanMove(point,600,true,20,false),Is.False);
+    }
+
     [TestCase(1)]
     [TestCase(2)]
     public void ChangedButton_SurvivesNewSettingsInstance(int button)

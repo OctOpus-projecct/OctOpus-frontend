@@ -59,14 +59,28 @@ public class PrototypeMapViewTests
         var view = host.AddComponent<PrototypeMapView>();
         view.EnsureBuilt(ground, camera);
         view.FrameCamera(960, 600);
-        Assert.That(camera.rect.xMin * 960, Is.GreaterThan(MovementInput.PanelRect.xMax));
+        Assert.That(camera.rect, Is.EqualTo(new Rect(0, 0, 1, 1)));
         AssertVisible(camera, WorldLayout.SpawnCenter);
         AssertVisible(camera, WorldLayout.GuidePosition + Vector3.up * 2.8f);
         foreach (Vector3 tree in WorldLayout.TreePositions) AssertVisible(camera, tree);
-        var guide = host.transform.Find("Prototype Map Scenery/Guide placeholder");
+        var guide = host.transform.Find("Prototype Map Scenery/Guide villager");
         Assert.That(guide, Is.Not.Null);
         Assert.That(guide.position.x, Is.EqualTo(WorldLayout.GuidePosition.x));
         Assert.That(guide.position.z, Is.EqualTo(WorldLayout.GuidePosition.z));
+        foreach (string buildingName in new[] { "Village cottage", "Village workshop" })
+        {
+            Transform building = host.transform.Find("Prototype Map Scenery/" + buildingName);
+            Assert.That(building, Is.Not.Null);
+            foreach (Renderer renderer in building.GetComponentsInChildren<Renderer>())
+            {
+                Bounds bounds = renderer.bounds;
+                Assert.That(bounds.max.x, Is.LessThan(-WorldLayout.HalfExtent), "Buildings stay outside the playable map.");
+                for (int x = -1; x <= 1; x += 2)
+                for (int y = -1; y <= 1; y += 2)
+                for (int z = -1; z <= 1; z += 2)
+                    AssertVisible(camera, bounds.center + Vector3.Scale(bounds.extents, new Vector3(x, y, z)));
+            }
+        }
         Object.DestroyImmediate(view);
     }
 
