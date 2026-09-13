@@ -28,12 +28,14 @@ public sealed class TreeModelView : MonoBehaviour
     private void Update(){if(standing!=null)Refresh();}
     private void Refresh()
     {
-        if(tree.Health<lastHealth)shakeAt=Time.unscaledTime;
+        if(tree.Health<lastHealth)shakeAt=Time.unscaledTime+WoodcuttingPose.ImpactTime;
+        else if(tree.Health>lastHealth)shakeAt=float.NegativeInfinity;
         lastHealth=tree.Health;
-        standing.SetActive(!tree.IsDepleted);stump.SetActive(tree.IsDepleted);
+        bool showStump=tree.IsDepleted && Time.unscaledTime>=shakeAt;
+        standing.SetActive(!showStump);stump.SetActive(showStump);
         for(int i=0;i<hitColliders.Length;i++)hitColliders[i].enabled=originalCollision[i] && !tree.IsDepleted;
         float elapsed=Time.unscaledTime-shakeAt;
-        standing.transform.localRotation=Quaternion.Euler(0,0,elapsed<.4f?Mathf.Sin(elapsed*45)*(1-elapsed/.4f)*2:0);
+        standing.transform.localRotation=Quaternion.Euler(0,0,elapsed>=0 && elapsed<.4f?Mathf.Sin(elapsed*45)*(1-elapsed/.4f)*2:0);
     }
     private void OnDestroy()
     {

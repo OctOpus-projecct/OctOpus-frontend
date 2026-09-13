@@ -90,9 +90,9 @@ public static class CharacterModels
     }
     public static void MakeAxe(ArtMesh b,Transform root)
     {
-        b.Cylinder("Wood handle",root,new Vector3(0,.27f,0),new Vector3(.065f,.76f,.065f),VillageColors.Wood,1);
+        b.Cylinder("Wood handle",root,new Vector3(0,.35f,0),new Vector3(.065f,1.30f,.065f),VillageColors.Wood,1);
         for(int i=0;i<5;i++){var wrap=b.Cylinder("Green grip wrap",root,new Vector3(0,.045f+i*.025f,0),new Vector3(.079f,.034f,.079f),VillageColors.Sage,1);wrap.transform.localRotation=Quaternion.Euler(0,0,i%2==0?8:-8);}
-        b.Extrude("Forged axe blade",root,new Vector3(0,.60f,0),new[]{new Vector2(-.07f,-.075f),new Vector2(.24f,-.19f),new Vector2(.29f,.12f),new Vector2(.04f,.16f),new Vector2(-.07f,.085f)},.065f,VillageColors.Steel);
-        b.Extrude("Cutting edge",root,new Vector3(0,.60f,0),new[]{new Vector2(.24f,-.19f),new Vector2(.275f,-.18f),new Vector2(.32f,.12f),new Vector2(.29f,.12f)},.068f,new Color(.72f,.77f,.73f));
+        b.Extrude("Forged axe blade",root,new Vector3(0,.95f,0),new[]{new Vector2(-.07f,-.075f),new Vector2(.24f,-.19f),new Vector2(.29f,.12f),new Vector2(.04f,.16f),new Vector2(-.07f,.085f)},.065f,VillageColors.Steel);
+        b.Extrude("Cutting edge",root,new Vector3(0,.95f,0),new[]{new Vector2(.24f,-.19f),new Vector2(.275f,-.18f),new Vector2(.32f,.12f),new Vector2(.29f,.12f)},.068f,new Color(.72f,.77f,.73f));
     }
 }

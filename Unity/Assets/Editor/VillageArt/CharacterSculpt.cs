@@ -20,10 +20,10 @@ public static class CharacterSculpt
         var material=new Material(Shader.Find("OctOpus/Painted Skin")){name="Painted skin",color=Color.white};art.Assets.Add(material);face.GetComponent<Renderer>().sharedMaterial=material;
     }
     public static void Hair(ArtMesh art,Transform parent)=>HairSurface.Build(art,parent);
-    public static void Hand(ArtMesh art,Transform parent,bool gripping,int side)
+    public static void Hand(ArtMesh art,Transform parent,bool gripping,int side,bool includeForearm=true)
     {
         var s=new OrganicSculpt(.009f);
-        s.Ellipsoid(new Vector3(0,.08f,0),new Vector3(.069f,.145f,.067f));
+        s.Ellipsoid(new Vector3(0,includeForearm?.08f:.025f,0),new Vector3(.069f,includeForearm?.145f:.07f,.067f));
         s.Ellipsoid(new Vector3(0,-.035f,-.008f),new Vector3(.070f,.074f,.049f));
         if(gripping)
         {

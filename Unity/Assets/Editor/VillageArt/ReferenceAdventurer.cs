@@ -35,6 +35,7 @@ public static class ReferenceAdventurer
         ReferenceGarments.Patch(art,"Scarf tail",body,(t,u)=>new Vector3(-.17f-t*.16f+(u-.5f)*(.12f-t*.035f),1.25f-t*.28f,-.20f-.08f*Mathf.Sin(t*Mathf.PI)),Vector3.back*.014f,Scarf,20,8);
         var head=art.Group("Head",body,new Vector3(0,1.61f,0));head.localScale=Vector3.one*1.14f;
         Face(art,head);HairStyle(art,head);ReferenceGarments.Hat(art,head);SeatHairUnderHat(head);
+        WoodcuttingPose.Apply(art.Root.transform,float.PositiveInfinity,false);
         return art;
     }
     private static void Leg(ArtMesh art,Transform body,int side)
@@ -52,16 +53,24 @@ public static class ReferenceAdventurer
     {
         var arm=art.Group(side<0?"ArmL":"ArmR",body,new Vector3(side*.32f,1.19f,0));arm.localRotation=Quaternion.Euler(0,0,side*14);
         CharacterSurface.Form(art,"Coat sleeve",arm,new[]{new Vector4(-.29f,.096f,.103f,0),new Vector4(-.24f,.14f,.139f,0),new Vector4(-.13f,.143f,.143f,0),new Vector4(.005f,.12f,.12f,0),new Vector4(.046f,.038f,.047f,0)},Coat);
-        CharacterSurface.Form(art,"Broad turned cuff",arm,new[]{new Vector4(-.33f,.109f,.117f,0),new Vector4(-.305f,.135f,.141f,0),new Vector4(-.25f,.141f,.144f,0),new Vector4(-.22f,.132f,.133f,0)},Linen);
-        CharacterSurface.Form(art,"Cuff edge seam",arm,new[]{new Vector4(-.324f,.123f,.130f,0),new Vector4(-.308f,.134f,.141f,0)},Leather*1.30f);
-        var hand=art.Group("Hand",arm,new Vector3(0,-.47f,.015f));CharacterSculpt.Hand(art,hand,side==1,side);
-        CharacterSurface.Form(art,"Leather wrist wrap",hand,new[]{new Vector4(.007f,.069f,.065f,0),new Vector4(.052f,.073f,.072f,0),new Vector4(.09f,.071f,.07f,0)},Leather);
-        art.Beam("Wrist keeper",hand,new Vector3(-.026f,.083f,.072f),new Vector3(.03f,.018f,.067f),.023f,Leather*1.50f);
+        var forearm=art.Group("Forearm",arm,Vector3.down*WoodcuttingPose.UpperArmLength);
+        CharacterSurface.Form(art,"Broad turned cuff",forearm,new[]{new Vector4(-.05f,.095f,.10f,0),new Vector4(-.025f,.125f,.131f,0),new Vector4(.03f,.131f,.134f,0),new Vector4(.06f,.12f,.123f,0)},Linen);
+        CharacterSurface.Form(art,"Cuff edge seam",forearm,new[]{new Vector4(-.044f,.107f,.113f,0),new Vector4(-.028f,.124f,.131f,0)},Leather*1.30f);
+        CharacterSurface.Form(art,"Shaped forearm",forearm,new[]{new Vector4(-WoodcuttingPose.ForearmLength,.062f,.062f,0),new Vector4(-.18f,.074f,.071f,0),new Vector4(-.07f,.086f,.081f,0),new Vector4(.02f,.072f,.073f,0)},Skin);
+        var hand=art.Group("Hand",arm,new Vector3(0,-.54f,0));CharacterSculpt.Hand(art,hand,side==1,side,false);
+        if(side<0)
+        {
+            var support=art.Group("SupportGrip",hand,Vector3.zero);
+            CharacterSculpt.Hand(art,support,true,side,false);support.gameObject.SetActive(false);
+        }
+        var grip=art.Group("GripAxis",hand,CharacterSculpt.GripCenter);grip.localRotation=CharacterSculpt.ToolRotation;
+        var wrist=art.Group("Wrist wrap",forearm,Vector3.down*WoodcuttingPose.ForearmLength);
+        CharacterSurface.Form(art,"Leather wrist wrap",wrist,new[]{new Vector4(.007f,.070f,.067f,0),new Vector4(.052f,.075f,.075f,0),new Vector4(.09f,.08f,.077f,0)},Leather);
+        art.Beam("Wrist keeper",wrist,new Vector3(-.026f,.083f,.08f),new Vector3(.03f,.018f,.069f),.023f,Leather*1.50f);
         if(side==1)
         {
             var tool=art.Group("HeldAxe",hand,CharacterSculpt.GripCenter-CharacterSculpt.ToolRotation*(Vector3.up*CharacterSculpt.ToolGripY*CharacterSculpt.ToolScale));
             tool.localRotation=CharacterSculpt.ToolRotation;tool.localScale=Vector3.one*CharacterSculpt.ToolScale;CharacterModels.MakeAxe(art,tool);
-            var grip=art.Group("GripAxis",hand,CharacterSculpt.GripCenter);grip.localRotation=CharacterSculpt.ToolRotation;
         }
     }
     private static void Buckle(ArtMesh art,Transform parent,Vector3 center,float width,float height)

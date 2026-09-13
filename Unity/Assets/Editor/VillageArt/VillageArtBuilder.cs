@@ -29,8 +29,8 @@ public static class VillageArtBuilder
                 else { EditorUtility.CopySerialized(source,existing); EditorUtility.SetDirty(existing); }
                 saved[source]=existing;
             }
-            foreach(var mesh in art.Root.GetComponentsInChildren<MeshFilter>()) mesh.sharedMesh=(Mesh)saved[mesh.sharedMesh];
-            foreach(var renderer in art.Root.GetComponentsInChildren<MeshRenderer>()) renderer.sharedMaterial=(Material)saved[renderer.sharedMaterial];
+            foreach(var mesh in art.Root.GetComponentsInChildren<MeshFilter>(true)) mesh.sharedMesh=(Mesh)saved[mesh.sharedMesh];
+            foreach(var renderer in art.Root.GetComponentsInChildren<MeshRenderer>(true)) renderer.sharedMaterial=(Material)saved[renderer.sharedMaterial];
             if(art.Root.name=="Axe" || art.Root.name=="Backpack")
             {
                 var bounds=BoundsOf(art.Root);
@@ -104,6 +104,7 @@ public static class VillageArtBuilder
         RenderFaces(output,camera,light);
         RenderGripPoses(output,camera,light);
         RenderAdventurer(output,camera,light);
+        RenderWoodcutting(output,camera,light);
         var map=new GameObject("Village");
         var ground=GameObject.CreatePrimitive(PrimitiveType.Plane);ground.transform.localScale=Vector3.one*2.4f;
         map.AddComponent<PrototypeMapView>().EnsureBuilt(ground,camera);
@@ -139,7 +140,7 @@ public static class VillageArtBuilder
         camera.aspect=1;camera.orthographicSize=.30f;light.transform.rotation=Quaternion.Euler(40,145,0);
         for(int i=0;i<3;i++)
         {
-            arm.localRotation=Quaternion.Euler(-i*55,0,11);
+            WoodcuttingPose.Apply(model.transform,new[]{0f,.17f,WoodcuttingPose.ImpactTime}[i],true);
             camera.transform.position=grip.position+new Vector3(1,.25f,1).normalized*3;camera.transform.LookAt(grip.position);
             var frame=Render(camera,500,500);image.SetPixels(i*500,0,500,500,frame.GetPixels());UnityEngine.Object.DestroyImmediate(frame);
         }
@@ -164,6 +165,37 @@ public static class VillageArtBuilder
         }
         image.Apply();File.WriteAllBytes(Path.Combine(output,"adventurer.png"),image.EncodeToPNG());
         UnityEngine.Object.DestroyImmediate(image);UnityEngine.Object.DestroyImmediate(model);UnityEngine.Object.DestroyImmediate(floor);UnityEngine.Object.DestroyImmediate(floorMaterial);
+    }
+    private static void RenderWoodcutting(string output,Camera camera,Light light)
+    {
+        var model=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("Village/Player"));
+        var tree=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("Village/Tree"),new Vector3(0,0,OctOpus.Shared.TreeInteractionRules.StopDistance),Quaternion.identity);
+        // Crop the crown only in the inspection view so both hands remain visible.
+        tree.transform.Find("Canopy").gameObject.SetActive(false);
+        var floor=GameObject.CreatePrimitive(PrimitiveType.Plane);
+        var material=new Material(Shader.Find("Standard")){color=new Color(.74f,.77f,.65f)};
+        floor.GetComponent<Renderer>().sharedMaterial=material;
+        light.transform.rotation=Quaternion.Euler(40,130,0);
+        camera.aspect=1;camera.orthographicSize=1.45f;
+        var center=new Vector3(0,1.15f,.28f);
+        camera.transform.position=center+new Vector3(5,2.2f,4);camera.transform.LookAt(center);
+        var sheet=new Texture2D(2000,500,TextureFormat.RGB24,false);
+        for(int i=0;i<4;i++)
+        {
+            WoodcuttingPose.Apply(model.transform,new[]{0f,.17f,WoodcuttingPose.ImpactTime,.42f}[i],true);
+            var frame=Render(camera,500,500);sheet.SetPixels(i*500,0,500,500,frame.GetPixels());UnityEngine.Object.DestroyImmediate(frame);
+        }
+        sheet.Apply();File.WriteAllBytes(Path.Combine(output,"woodcutting-poses.png"),sheet.EncodeToPNG());UnityEngine.Object.DestroyImmediate(sheet);
+        string frames=Path.Combine(output,"woodcutting-frames");Directory.CreateDirectory(frames);
+        for(int i=0;i<36;i++)
+        {
+            float time=i/30f-.20f;
+            WoodcuttingPose.Apply(model.transform,time<0?float.PositiveInfinity:time,true);
+            float hit=time-WoodcuttingPose.ImpactTime;
+            tree.transform.localRotation=Quaternion.Euler(0,0,hit>=0 && hit<.4f?Mathf.Sin(hit*45)*(1-hit/.4f)*2:0);
+            var frame=Render(camera,720,720);File.WriteAllBytes(Path.Combine(frames,i.ToString("D3")+".png"),frame.EncodeToPNG());UnityEngine.Object.DestroyImmediate(frame);
+        }
+        UnityEngine.Object.DestroyImmediate(model);UnityEngine.Object.DestroyImmediate(tree);UnityEngine.Object.DestroyImmediate(floor);UnityEngine.Object.DestroyImmediate(material);
     }
     private static Texture2D Render(Camera camera,int width,int height)
     {

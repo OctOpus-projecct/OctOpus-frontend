@@ -9,6 +9,7 @@ public class CharacterGripTests
     [TestCase("Body/Head/Sculpted face")]
     [TestCase("Body/Head/Continuous sculpted hair")]
     [TestCase("Body/ArmR/Hand/Sculpted gripping hand")]
+    [TestCase("Body/ArmL/Hand/SupportGrip/Sculpted gripping hand")]
     public void SculptedPartsAreOneConnectedSurface(string path)
     {
         var part=Resources.Load<GameObject>("Village/Player").transform.Find(path);
@@ -96,7 +97,8 @@ public class CharacterGripTests
                 Assert.That(Vector3.Distance(axe.TransformPoint(Vector3.up*.10f),grip.position),Is.LessThan(.0001f));
                 Assert.That(Vector3.Dot(axe.up,grip.up),Is.GreaterThan(.9999f));
             }
-            Assert.That((axe.up.x),Is.GreaterThan(0),"Blade should point outward from the right hand");
+            WoodcuttingPose.Apply(model.transform,WoodcuttingPose.ImpactTime,true);
+            Assert.That(Vector3.Dot(axe.right,model.transform.forward),Is.GreaterThan(.3f),"Cutting edge faces the target at impact");
         }
         finally{Object.DestroyImmediate(model);}
     }
